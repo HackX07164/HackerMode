@@ -39,7 +39,7 @@ function exit {
 exit nondestructive
 
 # HackerMode path
-VIRTUAL_ENV=$(python3 ~/.HackerMode/HackerMode/lib/variables.py HACKERMODE_PATH)
+VIRTUAL_ENV=${$(realpath $0)%/*/*}
 export VIRTUAL_ENV
 
 # Add HackerMode path to virtual system path

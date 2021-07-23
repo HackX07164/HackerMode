@@ -39,9 +39,18 @@ function exit() {
 exit nondestructive
 
 # HackerMode path
-_REAL_FILE_PATH=$(realpath $0)
-VIRTUAL_ENV=${_REAL_FILE_PATH%/*/*}
-export VIRTUAL_ENV
+if [[ "$0" =~ .+activate ]]; then
+  __FILE__=$(realpath "$0")
+  VIRTUAL_ENV=${__FILE__%/*/*}
+  export VIRTUAL_ENV
+elif [[ "$_" =~ .+bash ]]; then
+  __FILE__=$(realpath "$_")
+  VIRTUAL_ENV=${__FILE__%/*}
+  export VIRTUAL_ENV
+else
+  echo "# cannot find HackerMode path!"
+  exit
+fi
 
 # Add HackerMode path to virtual system path
 _OLD_VIRTUAL_PATH="$PATH"

@@ -29,6 +29,7 @@ function exit() {
   fi
 
   unset VIRTUAL_ENV
+
   if [ ! "${1:-}" = "nondestructive" ]; then
     # Self destruct!
     unset -f exit
@@ -39,27 +40,33 @@ function exit() {
 exit nondestructive
 
 # HackerMode path
-if [[ "$0" =~ .+activate ]]; then
-  __FILE__=$(realpath "$0")
-  VIRTUAL_ENV=${__FILE__%/*/*}
-  export VIRTUAL_ENV
-elif [[ "$_" =~ .+bash ]]; then
-  __FILE__=$(realpath "$_")
-  VIRTUAL_ENV=${__FILE__%/*}
-  export VIRTUAL_ENV
+_FILE_SOURCE_PATH=$(realpath "$0")
+if [[ "$_FILE_SOURCE_PATH" =~ .+activate ]]; then
+  VIRTUAL_ENV=${_FILE_SOURCE_PATH%/*/*}
+elif [[ "$_FILE_SOURCE_PATH" =~ .+bash ]]; then
+  _FILE_SOURCE_PATH=$(realpath "$BASH_SOURCE")
+  VIRTUAL_ENV=${_FILE_SOURCE_PATH%/*/*}
 else
-  echo "# cannot find HackerMode path!"
+  echo "# can't find HackerMode path!"
+  exit
   exit
 fi
+VIRTUAL_ENV=${_FILE_SOURCE_PATH%/*/*}
+export VIRTUAL_ENV
+unset _FILE_SOURCE_PATH
 
 # Add HackerMode path to virtual system path
 _OLD_VIRTUAL_PATH="$PATH"
 export PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# prompt setting (HackerMode cmd Style)
+# prompt setting (HackerMode cmd Style) and intro
+if [ -f $VIRTUAL_ENV/etc/motd ]; then
+  clear
+  cat $VIRTUAL_ENV/etc/motd
+fi
 if [ -z "${VIRTUAL_ENV_DISABLE_PROMPT:-}" ]; then
-  _OLD_VIRTUAL_PS1="${PS1:-}"
-  PS1="(HackerMode) ${PS1:-}"
+  _OLD_VIRTUAL_PS1=$PS1
+  source "$VIRTUAL_ENV/etc/bash.bashrc"
   export PS1
 fi
 

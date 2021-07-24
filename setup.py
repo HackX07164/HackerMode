@@ -110,7 +110,7 @@ class Installer:
                     path = "/etc/zsh/zshrc"
             with open(path, "r") as f:
                 data = f.read()
-            if data.find(Variables.HACKERMODE_SHORTCUT) > -1:
+            if data.find(Variables.HACKERMODE_SHORTCUT) == -1:
                 with open(path, "a") as f:
                     f.write(Variables.HACKERMODE_SHORTCUT)
 
@@ -219,7 +219,7 @@ class Installer:
                     path = "/etc/zsh/zshrc"
             with open(path, "r") as f:
                 data = f.read()
-            if data.find(Variables.HACKERMODE_SHORTCUT) > -1:
+            if data.find(Variables.HACKERMODE_SHORTCUT) == -1:
                 with open(path, "w") as f:
                     f.write(data.replace(Variables.HACKERMODE_SHORTCUT, ""))
         print("# The deletion was successful...")

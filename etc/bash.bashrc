@@ -5,6 +5,9 @@
 # You can use it to run files in etc folder.
 
 
+# HackerMode shortcuts
+alias c="clear"
+
 # HackerMode prompt
 PS1="\[\033[0;34m\]┌──\[\033[1;34m\](\[\033[1;31m\]HACKER💀MODE\[\033[1;34m\])\[\033[0;34m\]-\[\033[1;34m\][\[\033[0m\]\W\[\033[1;34m\]]\n\[\033[0;34m\]└─\[\033[1;31m\]\$\[\033[0m\] "
 # ┌──(HACKER💀MODE)-[home]

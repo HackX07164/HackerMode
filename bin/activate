@@ -68,6 +68,11 @@ if [ -z "${VIRTUAL_ENV_DISABLE_PROMPT:-}" ]; then
   _OLD_VIRTUAL_PS1=$PS1
   source "$VIRTUAL_ENV/etc/bash.bashrc"
   export PS1
+else
+  _OLD_VIRTUAL_PS1=$PS1
+  source "$VIRTUAL_ENV/etc/bash.bashrc"
+  PS1=$_OLD_VIRTUAL_PS1
+  export PS1
 fi
 
 # This should detect bash and zsh, which have a hash command that must

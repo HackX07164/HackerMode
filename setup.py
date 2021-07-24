@@ -101,9 +101,13 @@ class Installer:
         # add HackerMode shortcut...
         if (shell := os.environ.get('SHELL')):
             if shell.endswith("bash"):
-                path = os.path.join(shell.split("/usr/")[0], "/etc/bash.bashrc")
+                path = os.path.join(shell.split("/bin/")[0], "etc/bash.bashrc")
+                if not os.path.exists(path):
+                    path = "/etc/bash.bashrc"
             elif shell.endswith("zsh"):
-                path = os.path.join(shell.split("/usr/")[0], "/etc/zsh/zshrc")
+                path = os.path.join(shell.split("/bin/")[0], "etc/zsh/zshrc")
+                if not os.path.exists(path):
+                    path = "/etc/zsh/zshrc"
             with open(path, "r") as f:
                 data = f.read()
             if data.find(Variables.HACKERMODE_SHORTCUT) > -1:

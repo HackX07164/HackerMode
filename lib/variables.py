@@ -2,13 +2,18 @@
 import os
 import sys
 
-HACERMODE_FOLDER_NAME = "HackerMode"
+HACKERMODE_FOLDER_NAME = "HackerMode"
 
 
 class Variables:
     @property
+    def HACKERMODE_SHORTCUT(self) -> str:
+        """HackerMode shortcut"""
+        return f"\nalias HackerMode='source {self.HACKERMODE_ACTIVATE_FILE_PATH}'"
+
+    @property
     def HACKERMODE_ACTIVATE_FILE_PATH(self) -> str:
-        """To get real HackerMode path"""
+        """To get HackerMode activate file"""
         return os.path.join(self.HACKERMODE_INSTALL_PATH, "HackerMode/bin/activate")
 
     @property

@@ -3,7 +3,10 @@ import os
 import json
 import shutil
 
-from .variables import Variables
+try:
+    from lib.variables import Variables
+except ImportError:
+    from variables import Variables
 
 
 class config(object):
@@ -20,11 +23,10 @@ class config(object):
             self.file = file
 
     def set_file(self, file_path):
-        if os.path.isfile(file_path):
-            self.file = file_path
-        else:
+        if not os.path.isfile(file_path):
             with open(file_path, 'w') as f:
                 f.write(json.dumps({}, indent=4))
+        self.file = file_path
 
     def set(self, section, option, value):
         section = section.lower()
@@ -72,3 +74,4 @@ if __name__ == '__main__':
     debug = Config.get('settings', 'DEBUG', cast=bool)
     print(home, type(debug))
     print(Config.default_file)
+    print(Config.file)

@@ -5,7 +5,7 @@ import shutil
 from lib.config import Config
 from lib.variables import (
     Variables,
-    HACERMODE_FOLDER_NAME,
+    HACKERMODE_FOLDER_NAME,
 )
 
 with open(os.path.join(Variables.HACKERMODE_PATH, 'packages.json')) as fp:
@@ -30,6 +30,7 @@ RED = '\033[1;31m'
 GREEN = '\033[1;32m'
 YELLOW = '\033[1;33m'
 NORMAL = '\033[0m'
+UNDERLINE = "\033[4m"
 
 
 class Installer:
@@ -39,11 +40,11 @@ class Installer:
 
     def InstalledMsg(self, package, message=False):
         DefaultMessage = f'{package} installed successfully.'
-        return f'{NORMAL}[  {GREEN}OK{NORMAL}  ] {DefaultMessage if not message else message}'
+        return f'{NORMAL}[{GREEN}+{NORMAL}] {DefaultMessage if not message else message}'
 
     def NotInstalledMsg(self, package, message=False, is_base=False):
-        DefaultMessage = f' not able to install "{package}".'
-        return f'{NORMAL}[ {RED if is_base else YELLOW}{"error" if is_base else "warning"}{NORMAL} ] {DefaultMessage if not message else message}'
+        DefaultMessage = f'not able to install "{UNDERLINE}{package}{NORMAL}".'
+        return f'{NORMAL}[{RED if is_base else YELLOW}{"!" if is_base else "?"}{NORMAL}] {DefaultMessage if not message else message}'
 
     def installer(self):
         '''Install all HackerMode packages and modules'''
@@ -97,6 +98,18 @@ class Installer:
                 print('# good bye :D')
                 return
 
+        # add HackerMode shortcut...
+        if (shell := os.environ.get('SHELL')):
+            if shell.endswith("bash"):
+                path = os.path.join(shell.split("/usr/")[0], "/etc/bash.bashrc")
+            elif shell.endswith("zsh"):
+                path = os.path.join(shell.split("/usr/")[0], "/etc/zsh/zshrc")
+            with open(path, "r") as f:
+                data = f.read()
+            if data.find(Variables.HACKERMODE_SHORTCUT) > -1:
+                with open(path, "a") as f:
+                    f.write(Variables.HACKERMODE_SHORTCUT)
+
         # install packages
         self.installer()
 
@@ -122,19 +135,11 @@ class Installer:
             print('# In DEBUG mode can"t move the tool\n# to "System.TOOL_PATH"!')
             return
 
-        if os.path.isdir(HACERMODE_FOLDER_NAME):
-            # add HackerMode short cut...
-            if (shell := os.environ.get('SHELL')):
-                if shell.endswith("bash"):
-                    path = os.path.join(shell.split("/usr/")[0], "/etc/bash.bashrc")
-                elif shell.endswith("zsh"):
-                    path = os.path.join(shell.split("/usr/")[0], "/etc/zsh/zshrc")
-                with open(path, "a") as f:
-                    f.write(f"alias HackerMode='source {Variables.HACKERMODE_ACTIVATE_FILE_PATH}'")
-            Config.set('actions', 'IS_INSTALLED', True)
+        if os.path.isdir(HACKERMODE_FOLDER_NAME):
             try:
-                shutil.move(HACERMODE_FOLDER_NAME, Variables.HACKERMODE_INSTALL_PATH)
+                shutil.move(HACKERMODE_FOLDER_NAME, Variables.HACKERMODE_INSTALL_PATH)
                 print(f'# {GREEN}HackerMode installed successfully...{NORMAL}')
+                Config.set('actions', 'IS_INSTALLED', True)
             except shutil.Error as e:
                 self.delete()
                 print(e)
@@ -149,12 +154,15 @@ class Installer:
         '''To check if the packages has been
         installed successfully.
         '''
+        with open(os.path.join(Variables.HACKERMODE_PATH, "requirements.txt"), "r") as f:
+            PYHTON_MODULES = f.read().split("\n")
+        PYHTON_MODULES_INSTALLED = os.popen("pip3 freeze").read().split("\n")
 
         # check packages:
         for package in PACKAGES.keys():
             if not PACKAGES[package][Variables.PLATFORME]:
                 continue
-            if os.path.exists(os.popen(f"which {package.strip()}").read()):
+            if os.path.exists(os.popen(f"which {package.strip()}").read().strip()):
                 print(self.InstalledMsg(package))
                 if package in BASE_PACKAGES:
                     self.InstalledSuccessfully['base'].append(True)
@@ -164,47 +172,53 @@ class Installer:
                     self.InstalledSuccessfully['base'].append(False)
 
         # check python modules:
-        with open(os.path.join(Variables.HACKERMODE_PATH, "requirements.txt"), "r") as f:
-            PYHTON_MODULES = f.read().split("\n")
         for module in PYHTON_MODULES:
-            if module.strip() in os.popen("pip3 freeze").read().split("\n"):
+            if module.strip() in PYHTON_MODULES_INSTALLED:
                 print(self.InstalledMsg(module))
                 if module in BASE_PYHTON_MODULES:
                     self.InstalledSuccessfully['base'].append(True)
 
             else:
-                print(self.NotInstalledMsg(module, is_base=(module in BASE_PYHTON_MODULES)))
-                if module in BASE_PYHTON_MODULES:
-                    self.InstalledSuccessfully['base'].append(False)
+                try:
+                    exec(f"import {module.split('=')[0].strip()}")
+                    print(self.InstalledMsg(module))
+                    if module in BASE_PYHTON_MODULES:
+                        self.InstalledSuccessfully['base'].append(True)
+                except ImportError:
+                    print(self.NotInstalledMsg(module, is_base=(module in BASE_PYHTON_MODULES)))
+                    if module in BASE_PYHTON_MODULES:
+                        self.InstalledSuccessfully['base'].append(False)
 
     def update(self):
         if not Config.get('actions', 'DEBUG', cast=bool, default=False):
             os.system(
-                f'cd {Variables.HACKERMODE_PATH} && rm -rif {HACERMODE_FOLDER_NAME} && git clone https://github.com/Arab-developers/{HACERMODE_FOLDER_NAME}')
+                f'cd {Variables.HACKERMODE_PATH} && rm -rif {HACKERMODE_FOLDER_NAME} && git clone https://github.com/Arab-developers/{HACKERMODE_FOLDER_NAME}')
             self.installer()
         else:
             print("# can't update in the DEUBG mode!")
 
     def delete(self):
-        root_path = os.path.join(os.environ["SHELL"].split("/bin/")[0], "/bin/sudo")
         bin_path = os.path.join(os.environ["SHELL"].split("/bin/")[0], "/bin/HackerMode")
         tool_path = os.path.join(os.environ["HOME"], ".HackerMode")
-        root = ""
-        if os.path.exists(root_path):
-            root = "sudo"
         if os.path.exists(bin_path):
             os.remove(bin_path)
         if os.path.exists(tool_path):
             shutil.rmtree(tool_path)
-
-        if not os.path.exists(tool_path) and not os.path.exists(bin_path):
-            print("# The deletion was successful...")
-        else:
-            print("# Error: could not delete the tool!")
+        if (shell := os.environ.get('SHELL')):
+            if shell.endswith("bash"):
+                path = os.path.join(shell.split("/usr/")[0], "/etc/bash.bashrc")
+            elif shell.endswith("zsh"):
+                path = os.path.join(shell.split("/usr/")[0], "/etc/zsh/zshrc")
+            with open(path, "r") as f:
+                data = f.read()
+            if data.find(Variables.HACKERMODE_SHORTCUT) > -1:
+                with open(path, "w") as f:
+                    f.write(data.replace(Variables.HACKERMODE_SHORTCUT, ""))
+        print("# The deletion was successful...")
 
 
 Installer = Installer()
 
 if __name__ == '__main__':
-    # tests:
-    print('# To install write "python3 HackerMode install"')
+    print('# To install write "python3 -B HackerMode install"')
+    Installer.check()

@@ -39,7 +39,7 @@ class Installer:
     }
 
     def InstalledMsg(self, package, message=False):
-        DefaultMessage = f'{package} installed successfully.'
+        DefaultMessage = f'{package.split("=")[0]} installed successfully.'
         return f'{NORMAL}[{GREEN}+{NORMAL}] {DefaultMessage if not message else message}'
 
     def NotInstalledMsg(self, package, message=False, is_base=False):
@@ -210,9 +210,13 @@ class Installer:
             shutil.rmtree(tool_path)
         if (shell := os.environ.get('SHELL')):
             if shell.endswith("bash"):
-                path = os.path.join(shell.split("/usr/")[0], "/etc/bash.bashrc")
+                path = os.path.join(shell.split("/bin/")[0], "etc/bash.bashrc")
+                if not os.path.exists(path):
+                    path = "/etc/bash.bashrc"
             elif shell.endswith("zsh"):
-                path = os.path.join(shell.split("/usr/")[0], "/etc/zsh/zshrc")
+                path = os.path.join(shell.split("/bin/")[0], "etc/zsh/zshrc")
+                if not os.path.exists(path):
+                    path = "/etc/zsh/zshrc"
             with open(path, "r") as f:
                 data = f.read()
             if data.find(Variables.HACKERMODE_SHORTCUT) > -1:
@@ -225,4 +229,14 @@ Installer = Installer()
 
 if __name__ == '__main__':
     print('# To install write "python3 -B HackerMode install"')
-    Installer.check()
+    # Installer.check()
+    if (shell := os.environ.get('SHELL')):
+        if shell.endswith("bash"):
+            path = os.path.join(shell.split("/bin/")[0], "etc/bash.bashrc")
+            if not os.path.exists(path):
+                path = "/etc/bash.bashrc"
+        elif shell.endswith("zsh"):
+            path = os.path.join(shell.split("/bin/")[0], "etc/zsh/zshrc")
+            if not os.path.exists(path):
+                path = "/etc/zsh/zshrc"
+    print (path)

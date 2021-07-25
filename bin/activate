@@ -28,6 +28,10 @@ function exit() {
     unset _OLD_VIRTUAL_PS1
   fi
 
+  if [[ -f ~/.termux/font.ttf && $(cat ~/.termux/font.ttf) == $(cat $VIRTUAL_ENV/share/fonts/Roboto-Thin.ttf) ]]; then
+    echo "" > ~/.termux/font.ttf
+  fi
+
   unset VIRTUAL_ENV
 
   if [ ! "${1:-}" = "nondestructive" ]; then
@@ -57,6 +61,11 @@ unset _FILE_SOURCE_PATH
 
 # Add HackerMode path to virtual system path
 _OLD_VIRTUAL_PATH="$PATH"
+for bin_folder in $(find $VIRTUAL_ENV/tools/ -name "bin"); do
+  if [[ -d "$bin_folder" ]]; then
+    PATH="$bin_folder:$PATH"
+  fi
+done
 export PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # prompt setting (HackerMode cmd Style) and intro
@@ -73,6 +82,11 @@ else
   source "$VIRTUAL_ENV/etc/bash.bashrc"
   PS1=$_OLD_VIRTUAL_PS1
   export PS1
+fi
+
+# HackerMode font
+if [[ $(python3 $VIRTUAL_ENV/lib/variables.py PLATFORME) == termux ]]; then
+  cat $VIRTUAL_ENV/share/fonts/Roboto-Thin.ttf > ~/.termux/font.ttf
 fi
 
 # This should detect bash and zsh, which have a hash command that must

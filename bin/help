@@ -1,0 +1,23 @@
+#!/usr/bin/python3
+import os
+import sys
+
+from rich.console import Console
+from rich.markdown import Markdown
+
+DOCS_PATH = os.path.join(os.environ.get("VIRTUAL_ENV"), "share/docs")
+DOC_NAME = exit("USAGE:") if len(sys.argv) <= 1 else sys.argv[1]
+DOC_FILE_PATH = os.path.join(DOCS_PATH, DOC_NAME.lower() + '.md')
+DOC_FILE_PATH_TOOLS = os.path.join(os.environ.get("VIRTUAL_ENV"), f"tools/{DOC_NAME.lower()}/README.md")
+console = Console()
+
+if os.path.exists(DOC_FILE_PATH):
+    with open(DOC_FILE_PATH) as readme:
+        markdown = Markdown(readme.read())
+    console.print(markdown)
+elif os.path.exists(DOC_FILE_PATH_TOOLS):
+    with open(DOC_FILE_PATH_TOOLS) as readme:
+        markdown = Markdown(readme.read())
+    console.print(markdown)
+else:
+    print(f"# no doc help on '{DOC_NAME}'!")

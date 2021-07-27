@@ -1,4 +1,0 @@
-bs4
-flask
-N4tools
-rich

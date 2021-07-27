@@ -33,7 +33,7 @@ DEFAULT_FG="$(printf '\033[39m')"
 DEFAULT_BG="$(printf '\033[49m')"
 
 ## Directories
-PREFIX='$VIRTUAL_ENV'
+PREFIX=$VIRTUAL_ENV
 TERMUX_DIR="$HOME/.termux"
 COLORS_DIR="$PREFIX/tools/termux-style/colors"
 FONTS_DIR="$PREFIX/tools/termux-style/fonts"

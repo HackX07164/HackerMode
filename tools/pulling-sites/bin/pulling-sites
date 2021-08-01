@@ -4,10 +4,15 @@ import sys
 
 sys.path.append(os.environ.get("VIRTUAL_ENV") + "/tools/pulling-sites")
 
+from N4Tools.Design import Text
 from source import PullSites
 
+text = Text()
+
 if __name__ == "__main__":
-    url = sys.argv[1]
-    project_name = sys.argv[2]
-    page_name = sys.argv[3]
-    PullSites(url, project_name, page_name).start()
+    data = {
+        "url": text.CInput("(url): "),
+        "project_name": text.CInput("(site name): "),
+        "page_name": text.CInput("(page name): ", completer=["index"]),
+    }
+    PullSites(*[data[key] for key in data.keys()]).start()

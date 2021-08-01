@@ -69,15 +69,18 @@ class Installer:
         old_path = os.getcwd()
         try:
             for tool in os.listdir(Variables.HACKERMODE_TOOLS_PATH):
-                os.chdir(os.path.join(Variables.HACKERMODE_TOOLS_PATH, tool))
-                if os.path.isfile("setup"):
-                    if Variables.PLATFORME == 'linux':
-                        os.system(f'sudo chmod +x setup')
-                    elif Variables.PLATFORME == 'termux':
-                        os.system(f'chmod +x setup')
-                    os.system("./setup")
+                if os.path.exists(os.path.join(Variables.HACKERMODE_TOOLS_PATH, tool)):
+                    os.chdir(os.path.join(Variables.HACKERMODE_TOOLS_PATH, tool))
+                    if os.path.isfile("setup"):
+                        if Variables.PLATFORME == 'linux':
+                            os.system(f'sudo chmod +x setup')
+                        elif Variables.PLATFORME == 'termux':
+                            os.system(f'chmod +x setup')
+                        os.system("./setup")
+                    else:
+                        print(f"{YELLOW}# no setup file in '{tool}'!")
                 else:
-                    print(f"{YELLOW}# no setup file in '{tool}'!")
+                    print("# Not find", os.path.join(Variables.HACKERMODE_TOOLS_PATH, tool))
         finally:
             os.chdir(old_path)
 
@@ -239,4 +242,4 @@ if __name__ == '__main__':
             path = os.path.join(shell.split("/bin/")[0], "etc/zsh/zshrc")
             if not os.path.exists(path):
                 path = "/etc/zsh/zshrc"
-    print (path)
+    print(path)

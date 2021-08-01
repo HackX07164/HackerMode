@@ -6,6 +6,8 @@ sys.path.append(os.environ.get("VIRTUAL_ENV") + "/tools/pulling-sites")
 
 from source import PullSites
 
-url = "https://github.com"
-# url = "https://github.com"
-PullSites(url)
+if __name__ == "__main__":
+    url = sys.argv[1]
+    project_name = sys.argv[2]
+    page_name = sys.argv[3]
+    PullSites(url, project_name, page_name).start()

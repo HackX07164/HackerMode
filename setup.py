@@ -30,21 +30,23 @@ RED = '\033[1;31m'
 GREEN = '\033[1;32m'
 YELLOW = '\033[1;33m'
 NORMAL = '\033[0m'
-UNDERLINE = "\033[4m"
+UNDERLINE = '\033[4m'
+BOLD = '\033[1m'
 
 
 class Installer:
-    InstalledSuccessfully = {
+    installed_successfully = {
         'base': []
     }
 
-    def InstalledMsg(self, package, message=False):
-        DefaultMessage = f'{package.split("=")[0]} installed successfully.'
-        return f'{NORMAL}[{GREEN}+{NORMAL}] {DefaultMessage if not message else message}'
+    def installed_msg(self, package, message=False):
+        default_message = f'{package.split("=")[0]} installed successfully.'
+        return f'{NORMAL}({GREEN}✔{NORMAL}) {GREEN}{default_message if not message else message}'
 
-    def NotInstalledMsg(self, package, message=False, is_base=False):
-        DefaultMessage = f'not able to install "{UNDERLINE}{package}{NORMAL}".'
-        return f'{NORMAL}[{RED if is_base else YELLOW}{"!" if is_base else "?"}{NORMAL}] {DefaultMessage if not message else message}'
+    def not_installed_msg(self, package, message=False, is_base=False):
+        default_message = f'not able to install "{package}".{NORMAL}'
+        color = RED if is_base else YELLOW
+        return f'{NORMAL}({color}{"✗" if is_base else "!"}{NORMAL}) {color}{default_message if not message else message}'
 
     def installer(self):
         '''Install all HackerMode packages and modules'''
@@ -68,19 +70,21 @@ class Installer:
 
         old_path = os.getcwd()
         try:
-            for tool in os.listdir(Variables.HACKERMODE_TOOLS_PATH):
-                if os.path.exists(os.path.join(Variables.HACKERMODE_TOOLS_PATH, tool)):
-                    os.chdir(os.path.join(Variables.HACKERMODE_TOOLS_PATH, tool))
-                    if os.path.isfile("setup"):
-                        if Variables.PLATFORME == 'linux':
-                            os.system(f'sudo chmod +x setup')
-                        elif Variables.PLATFORME == 'termux':
-                            os.system(f'chmod +x setup')
-                        os.system("./setup")
+            for root, tools, files in os.walk(Variables.HACKERMODE_TOOLS_PATH):
+                for tool in tools:
+                    if os.path.exists(os.path.join(Variables.HACKERMODE_TOOLS_PATH, tool)):
+                        os.chdir(os.path.join(Variables.HACKERMODE_TOOLS_PATH, tool))
+                        if os.path.isfile("setup"):
+                            if Variables.PLATFORME == 'linux':
+                                os.system(f'sudo chmod +x setup')
+                            elif Variables.PLATFORME == 'termux':
+                                os.system(f'chmod +x setup')
+                            os.system("./setup")
+                        else:
+                            print(f"{YELLOW}# no setup file in '{tool}'!")
                     else:
-                        print(f"{YELLOW}# no setup file in '{tool}'!")
-                else:
-                    print("# Not find", os.path.join(Variables.HACKERMODE_TOOLS_PATH, tool))
+                        print("# Not find", os.path.join(Variables.HACKERMODE_TOOLS_PATH, tool))
+                break
         finally:
             os.chdir(old_path)
 
@@ -101,27 +105,11 @@ class Installer:
                 print('# good bye :D')
                 return
 
-        # add HackerMode shortcut...
-        if (shell := os.environ.get('SHELL')):
-            if shell.endswith("bash"):
-                path = os.path.join(shell.split("/bin/")[0], "etc/bash.bashrc")
-                if not os.path.exists(path):
-                    path = "/etc/bash.bashrc"
-            elif shell.endswith("zsh"):
-                path = os.path.join(shell.split("/bin/")[0], "etc/zsh/zshrc")
-                if not os.path.exists(path):
-                    path = "/etc/zsh/zshrc"
-            with open(path, "r") as f:
-                data = f.read()
-            if data.find(Variables.HACKERMODE_SHORTCUT) == -1:
-                with open(path, "a") as f:
-                    f.write(Variables.HACKERMODE_SHORTCUT)
-
         # install packages
         self.installer()
 
         # check:
-        print('\n# checking:')
+        print('\n# CHRCKING:')
         self.check()
 
         if Variables.PLATFORME == "termux":
@@ -134,7 +122,7 @@ class Installer:
             return
 
         # Move the tool to "System.TOOL_PATH"
-        if not all(self.InstalledSuccessfully['base']):
+        if not all(self.installed_successfully['base']):
             print(f'# {RED}Error:{NORMAL} some of the basics package not installed!')
             return
 
@@ -170,31 +158,31 @@ class Installer:
             if not PACKAGES[package][Variables.PLATFORME]:
                 continue
             if os.path.exists(os.popen(f"which {package.strip()}").read().strip()):
-                print(self.InstalledMsg(package))
+                print(self.installed_msg(package))
                 if package in BASE_PACKAGES:
-                    self.InstalledSuccessfully['base'].append(True)
+                    self.installed_successfully['base'].append(True)
             else:
-                print(self.NotInstalledMsg(package, is_base=(package in BASE_PACKAGES)))
+                print(self.not_installed_msg(package, is_base=(package in BASE_PACKAGES)))
                 if package in BASE_PACKAGES:
-                    self.InstalledSuccessfully['base'].append(False)
+                    self.installed_successfully['base'].append(False)
 
         # check python modules:
         for module in PYHTON_MODULES:
             if module.strip() in PYHTON_MODULES_INSTALLED:
-                print(self.InstalledMsg(module))
+                print(self.installed_msg(module))
                 if module in BASE_PYHTON_MODULES:
-                    self.InstalledSuccessfully['base'].append(True)
+                    self.installed_successfully['base'].append(True)
 
             else:
                 try:
                     exec(f"import {module.split('=')[0].strip()}")
-                    print(self.InstalledMsg(module))
+                    print(self.installed_msg(module))
                     if module in BASE_PYHTON_MODULES:
-                        self.InstalledSuccessfully['base'].append(True)
+                        self.installed_successfully['base'].append(True)
                 except ImportError:
-                    print(self.NotInstalledMsg(module, is_base=(module in BASE_PYHTON_MODULES)))
+                    print(self.not_installed_msg(module, is_base=(module in BASE_PYHTON_MODULES)))
                     if module in BASE_PYHTON_MODULES:
-                        self.InstalledSuccessfully['base'].append(False)
+                        self.installed_successfully['base'].append(False)
 
     def update(self):
         if not Config.get('actions', 'DEBUG', cast=bool, default=False):
@@ -222,9 +210,9 @@ class Installer:
                     path = "/etc/zsh/zshrc"
             with open(path, "r") as f:
                 data = f.read()
-            if data.find(Variables.HACKERMODE_SHORTCUT) != -1:
+            if data.find(Variables.HACKERMODE_SHORTCUT.strip()) != -1:
                 with open(path, "w") as f:
-                    f.write(data.replace(Variables.HACKERMODE_SHORTCUT, ""))
+                    f.write(data.replace(Variables.HACKERMODE_SHORTCUT.strip(), ""))
         print("# The deletion was successful...")
 
 
@@ -232,14 +220,3 @@ Installer = Installer()
 
 if __name__ == '__main__':
     print('# To install write "python3 -B HackerMode install"')
-    # Installer.check()
-    if (shell := os.environ.get('SHELL')):
-        if shell.endswith("bash"):
-            path = os.path.join(shell.split("/bin/")[0], "etc/bash.bashrc")
-            if not os.path.exists(path):
-                path = "/etc/bash.bashrc"
-        elif shell.endswith("zsh"):
-            path = os.path.join(shell.split("/bin/")[0], "etc/zsh/zshrc")
-            if not os.path.exists(path):
-                path = "/etc/zsh/zshrc"
-    print(path)

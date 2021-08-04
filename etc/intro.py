@@ -4,7 +4,7 @@ from rich.panel import Panel
 console = Console()
 description = """
 [blue]text[/blue] text
-
+[blue]text[/blue] text
 """
 
 console.print(

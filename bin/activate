@@ -72,7 +72,7 @@ if [ -f $VIRTUAL_ENV/etc/motd ]; then
   clear
   cat $VIRTUAL_ENV/etc/motd
 fi
-if [ -z "${VIRTUAL_ENV_DISABLE_PROMPT:-}" ]; then
+if [[ -z "${VIRTUAL_ENV_DISABLE_PROMPT:-}"  && $0 == "bash" ]]; then
   _OLD_VIRTUAL_PS1=$PS1
   source "$VIRTUAL_ENV/etc/bash.bashrc"
   export PS1

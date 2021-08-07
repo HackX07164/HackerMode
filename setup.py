@@ -199,7 +199,7 @@ class Installer:
 
     def update(self):
         if not Config.get('actions', 'DEBUG', cast=bool, default=False):
-            hackermode_command_line_path = os.environ("_").split("bin/")[0] + "bin/HackerMode"
+            hackermode_command_line_path = os.environ.get("_").split("bin/")[0] + "bin/HackerMode"
             if os.path.exists(hackermode_command_line_path):
                 os.remove(hackermode_command_line_path)
             os.system(

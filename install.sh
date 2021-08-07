@@ -1,10 +1,6 @@
-wget https://github.com/Arab-developers/HackerMode/archive/refs/heads/future.zip
-unzip future.zip
-rm future.zip
-mv HackerMode-future HackerMode
-clear
-echo "# start installing.../"
+rm -rif HackerMode
+git clone https://github.com/Arab-developers/HackerMode
+echo -e "\n# start installing.../"
 python3 -B HackerMode install
-alias HackerMode='source /data/data/com.termux/files/home/.HackerMode/HackerMode/bin/activate'
-echo Enter HackerMode to start...
-echo -e "\033[0m"
+alias HackerMode="source $HOME/.HackerMode/HackerMode/bin/activate"
+rm HackerModeInstall

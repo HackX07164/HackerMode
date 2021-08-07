@@ -126,10 +126,6 @@ class Installer:
             print(f'# {RED}Error:{NORMAL} some of the basics package not installed!')
             return
 
-        if Config.get('actions', 'DEBUG', cast=bool, default=True):
-            print('# In DEBUG mode can"t move the tool\n# to "System.TOOL_PATH"!')
-            return
-
         if os.path.isdir(HACKERMODE_FOLDER_NAME):
             try:
                 shutil.move(HACKERMODE_FOLDER_NAME, Variables.HACKERMODE_INSTALL_PATH)

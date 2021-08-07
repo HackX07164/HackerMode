@@ -41,12 +41,12 @@ class Installer:
 
     def installed_msg(self, package, message=False):
         default_message = f'{package.split("=")[0]} installed successfully.'
-        return f'{NORMAL}({GREEN}✔{NORMAL}) {GREEN}{default_message if not message else message}'
+        return f'{NORMAL}({GREEN}✔{NORMAL}) {GREEN}{default_message if not message else message}{NORMAL}'
 
     def not_installed_msg(self, package, message=False, is_base=False):
-        default_message = f'not able to install "{package}".{NORMAL}'
+        default_message = f'not able to install "{package}".'
         color = RED if is_base else YELLOW
-        return f'{NORMAL}({color}{"✗" if is_base else "!"}{NORMAL}) {color}{default_message if not message else message}'
+        return f'{NORMAL}({color}{"✗" if is_base else "!"}{NORMAL}) {color}{default_message if not message else message}{NORMAL}'
 
     def installer(self):
         '''Install all HackerMode packages and modules'''
@@ -134,6 +134,8 @@ class Installer:
             try:
                 shutil.move(HACKERMODE_FOLDER_NAME, Variables.HACKERMODE_INSTALL_PATH)
                 Config.set('actions', 'IS_INSTALLED', True)
+
+                # add HackerMode shortcut...
                 try:
                     with open(Variables.BASHRIC_FILE_PATH, "r") as f:
                         data = f.read()
@@ -205,22 +207,29 @@ class Installer:
             os.system(
                 f'cd {Variables.HACKERMODE_INSTALL_PATH} && rm -rif {HACKERMODE_FOLDER_NAME} && git clone https://github.com/Arab-developers/{HACKERMODE_FOLDER_NAME}')
             os.system("HackerMode installer")
+            os.system("HackerMode check")
+            print(f'# {GREEN}HackerMode updated successfully...{NORMAL}')
         else:
             print("# can't update in the DEUBG mode!")
 
     def delete(self):
-        bin_path = os.path.join(os.environ["SHELL"].split("/bin/")[0], "/bin/HackerMode")
-        tool_path = os.path.join(os.environ["HOME"], ".HackerMode")
-        if os.path.exists(bin_path):
-            os.remove(bin_path)
-        if os.path.exists(tool_path):
-            shutil.rmtree(tool_path)
-            with open(Variables.BASHRIC_FILE_PATH, "r") as f:
-                data = f.read()
-            if data.find(Variables.HACKERMODE_SHORTCUT.strip()) != -1:
-                with open(Variables.BASHRIC_FILE_PATH, "w") as f:
-                    f.write(data.replace(Variables.HACKERMODE_SHORTCUT.strip(), ""))
-        print("# The deletion was successful...")
+        status = input("# Do you really want to delete the tool?\n [n/y]: ").lower()
+        if status in ("y", "yes", "ok", "yep"):
+            bin_path = os.path.join(os.environ["SHELL"].split("/bin/")[0], "/bin/HackerMode")
+            tool_path = os.path.join(os.environ["HOME"], ".HackerMode")
+            if os.path.exists(bin_path):
+                os.remove(bin_path)
+            if os.path.exists(tool_path):
+                shutil.rmtree(tool_path)
+                try:
+                    with open(Variables.BASHRIC_FILE_PATH, "r") as f:
+                        data = f.read()
+                    if data.find(Variables.HACKERMODE_SHORTCUT.strip()) != -1:
+                        with open(Variables.BASHRIC_FILE_PATH, "w") as f:
+                            f.write(data.replace(Variables.HACKERMODE_SHORTCUT.strip(), ""))
+                except PermissionError:
+                    print("# cannot remove HackerMode shortcut!")
+            print("# The deletion was successful...")
 
 
 Installer = Installer()

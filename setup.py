@@ -139,13 +139,13 @@ class Installer:
                         data = f.read()
                     if data.find(Variables.HACKERMODE_SHORTCUT.strip()) == -1:
                         with open(Variables.BASHRIC_FILE_PATH, "w") as f:
-                            f.write(data+Variables.HACKERMODE_SHORTCUT)
+                            f.write(data + Variables.HACKERMODE_SHORTCUT)
                     print(f'# {GREEN}HackerMode installed successfully...{NORMAL}')
                 except PermissionError:
-                    print(NORMAL+"# add HackerMode shortcut:")
+                    print(NORMAL + "# add HackerMode shortcut:")
                     print(f"# '{YELLOW}{Variables.HACKERMODE_SHORTCUT}{NORMAL}'")
                     print("# to this path:")
-                    print("# "+Variables.HACKERMODE_BIN_PATH)
+                    print("# " + Variables.HACKERMODE_BIN_PATH)
                     print(f'# {GREEN}HackerMode installed successfully...{NORMAL}')
 
             except shutil.Error as e:
@@ -204,7 +204,7 @@ class Installer:
                 os.remove(hackermode_command_line_path)
             os.system(
                 f'cd {Variables.HACKERMODE_INSTALL_PATH} && rm -rif {HACKERMODE_FOLDER_NAME} && git clone https://github.com/Arab-developers/{HACKERMODE_FOLDER_NAME}')
-            os.system("HackerMode update")
+            os.system("HackerMode installer")
         else:
             print("# can't update in the DEUBG mode!")
 

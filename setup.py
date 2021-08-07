@@ -109,7 +109,7 @@ class Installer:
         self.installer()
 
         # check:
-        print('\n# CHRCKING:')
+        print('\n# CHECKING:')
         self.check()
 
         if Variables.PLATFORME == "termux":
@@ -133,8 +133,21 @@ class Installer:
         if os.path.isdir(HACKERMODE_FOLDER_NAME):
             try:
                 shutil.move(HACKERMODE_FOLDER_NAME, Variables.HACKERMODE_INSTALL_PATH)
-                print(f'# {GREEN}HackerMode installed successfully...{NORMAL}')
                 Config.set('actions', 'IS_INSTALLED', True)
+                try:
+                    with open(Variables.BASHRIC_FILE_PATH, "r") as f:
+                        data = f.read()
+                    if data.find(Variables.HACKERMODE_SHORTCUT.strip()) == -1:
+                        with open(Variables.BASHRIC_FILE_PATH, "w") as f:
+                            f.write(data+Variables.HACKERMODE_SHORTCUT)
+                    print(f'# {GREEN}HackerMode installed successfully...{NORMAL}')
+                except PermissionError:
+                    print(NORMAL+"# add HackerMode shortcut:")
+                    print(f"# '{YELLOW}{Variables.HACKERMODE_SHORTCUT}{NORMAL}'")
+                    print("# to this path:")
+                    print("# "+Variables.HACKERMODE_BIN_PATH)
+                    print(f'# {GREEN}HackerMode installed successfully...{NORMAL}')
+
             except shutil.Error as e:
                 self.delete()
                 print(e)
@@ -186,9 +199,12 @@ class Installer:
 
     def update(self):
         if not Config.get('actions', 'DEBUG', cast=bool, default=False):
+            hackermode_command_line_path = os.environ("_").split("bin/")[0] + "bin/HackerMode"
+            if os.path.exists(hackermode_command_line_path):
+                os.remove(hackermode_command_line_path)
             os.system(
-                f'cd {Variables.HACKERMODE_PATH} && rm -rif {HACKERMODE_FOLDER_NAME} && git clone https://github.com/Arab-developers/{HACKERMODE_FOLDER_NAME}')
-            self.installer()
+                f'cd {Variables.HACKERMODE_INSTALL_PATH} && rm -rif {HACKERMODE_FOLDER_NAME} && git clone https://github.com/Arab-developers/{HACKERMODE_FOLDER_NAME}')
+            os.system("HackerMode update")
         else:
             print("# can't update in the DEUBG mode!")
 
@@ -199,19 +215,10 @@ class Installer:
             os.remove(bin_path)
         if os.path.exists(tool_path):
             shutil.rmtree(tool_path)
-        if (shell := os.environ.get('SHELL')):
-            if shell.endswith("bash"):
-                path = os.path.join(shell.split("/bin/")[0], "etc/bash.bashrc")
-                if not os.path.exists(path):
-                    path = "/etc/bash.bashrc"
-            elif shell.endswith("zsh"):
-                path = os.path.join(shell.split("/bin/")[0], "etc/zsh/zshrc")
-                if not os.path.exists(path):
-                    path = "/etc/zsh/zshrc"
-            with open(path, "r") as f:
+            with open(Variables.BASHRIC_FILE_PATH, "r") as f:
                 data = f.read()
             if data.find(Variables.HACKERMODE_SHORTCUT.strip()) != -1:
-                with open(path, "w") as f:
+                with open(Variables.BASHRIC_FILE_PATH, "w") as f:
                     f.write(data.replace(Variables.HACKERMODE_SHORTCUT.strip(), ""))
         print("# The deletion was successful...")
 

@@ -7,6 +7,19 @@ HACKERMODE_FOLDER_NAME = "HackerMode"
 
 class Variables:
     @property
+    def BASHRIC_FILE_PATH(self):
+        if (shell := os.environ.get('SHELL')):
+            if shell.endswith("bash"):
+                path = os.path.join(shell.split("/bin/")[0], "etc/bash.bashrc")
+                if not os.path.exists(path):
+                    path = "/etc/bash.bashrc"
+            elif shell.endswith("zsh"):
+                path = os.path.join(shell.split("/bin/")[0], "etc/zsh/zshrc")
+                if not os.path.exists(path):
+                    path = "/etc/zsh/zshrc"
+        return path
+
+    @property
     def HACKERMODE_SHORTCUT(self) -> str:
         """HackerMode shortcut"""
         return f"\nalias HackerMode='source {self.HACKERMODE_ACTIVATE_FILE_PATH}'"

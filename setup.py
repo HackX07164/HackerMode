@@ -1,4 +1,5 @@
 import os
+import sys
 import shutil
 
 from base.system import System
@@ -74,10 +75,7 @@ BASE_PYHTON_MODULES = (
     'python-bidi',
 )
 
-BASE_PACKAGES = (
-    'git',
-    'pip3',
-)
+BASE_PACKAGES = ['git']
 
 RED = '\033[1;31m'
 GREEN = '\033[1;32m'
@@ -165,7 +163,7 @@ class Installer:
             return
 
         if os.system(
-                f"{'sudo ' if System.PLATFORME != 'termux' else ' '}cp {__file__.rsplit('/',1)[0]}/HackerMode {os.environ.get('_').split('bin/')[0] + 'bin/'}") != 0:
+                f"{'sudo ' if System.PLATFORME != 'termux' else ' '}cp {__file__.rsplit('/', 1)[0]}/HackerMode {os.environ.get('_').split('bin/')[0] + 'bin/'}") != 0:
             print('# installed failed!')
             return
         Config.set('actions', 'IS_INSTALLED', True)
@@ -179,18 +177,18 @@ class Installer:
                     with open(System.BASHRIC_FILE_PATH, "w") as f:
                         f.write(data.replace(System.HACKERMODE_SHORTCUT.strip(), ""))
             except PermissionError:
-                print("# cannot remove HackerMode shortcut!")
-            print(f'# {GREEN}HackerMode installed successfully...{NORMAL}')
+                print(f"# {RED}cannot remove HackerMode shortcut!")
+            print(f'# {GREEN}HackerMode installed successfully...')
         except shutil.Error as e:
-            print(e)
-            print('# installed failed!')
+            print(f"{RED}{e}")
+            print(f'# {RED}install failed!')
+        sys.stdout.write(NORMAL)
 
     def check(self):
         '''To check if the packages has been
         installed successfully.
 
         '''
-
         # check packages:
         for package in PACKAGES.keys():
             if not PACKAGES[package][System.PLATFORME]:

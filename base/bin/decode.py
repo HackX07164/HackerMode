@@ -3,13 +3,14 @@ import io
 import re
 import os
 import sys
-import dis
 import time
 import zlib
 import base64
 import marshal
 from pkgutil import read_code
 
+from rich.console import Console
+from rich.syntax import Syntax
 from uncompyle6 import PYTHON_VERSION
 from uncompyle6.main import decompile
 
@@ -39,6 +40,19 @@ COPYRIGHT = """
 
 
 class CodeSearchAlgorithms:
+    @staticmethod
+    def bytecode(string: str) -> bytes:
+        pattern: str = r"""(((b|bytes\()["'])(.+)(["']))"""
+        length: int = 0
+        string_data: str = ""
+        for string in re.findall(pattern, string):
+            if len(string[3]) > length:
+                length = len(string[3])
+                string_data = string[3]
+        if not string_data:
+            raise Exception()
+        return eval(f"b'{string_data}'")
+
     @staticmethod
     def bytecode(string: str) -> bytes:
         pattern: str = r"""(((b|bytes\()["'])(.+)(["']))"""
@@ -87,6 +101,7 @@ class DecodingAlgorithms:
         self._custom_exec_data = None
         self._custom_compile_data = None
         self._custom_eval_data = None
+        self._custom_data = None
 
         if CONFIG.get('actions', 'DEBUG', cast=bool, default=False):
             sys.__dict__['EXIT'.lower()]()
@@ -173,15 +188,17 @@ class DecodingAlgorithms:
             self._custom_eval_data = args[0]
 
         OLD_EXEC(self.file_data)
-        if type(self._custom_exec_data) is str:
-            return self._custom_exec_data
+        if self._custom_exec_data != None:
+            self._custom_data = self._custom_exec_data
         elif self._custom_compile_data != None:
-            if type(self._custom_compile_data) == bytes:
-                return self._custom_compile_data.decode(ENCODEING)
-            elif type(self._custom_compile_data) == str:
-                return self._custom_compile_data
-        elif type(self._custom_eval_data) is str:
-            return self._custom_exec_data
+            self._custom_data = self._custom_compile_data
+        elif self._custom_eval_data != None:
+            self._custom_data = self._custom_eval_data
+
+        if type(self._custom_data) == bytes:
+            return self._custom_data.decode(ENCODEING)
+        elif type(self._custom_data) == str:
+            return self._custom_data
 
         if self._custom_exec_data:
             bytecode = self._custom_exec_data
@@ -213,7 +230,7 @@ class DecodingAlgorithms:
                             output += f"\n\n{arg.replace('co_', '').upper()}:"
                             for o in out:
                                 if type(o) is str:
-                                    output += (f"\n  {bytes(o,ENCODEING)}").replace(" b'"," '")
+                                    output += (f"\n  {bytes(o, ENCODEING)}").replace(" b'", " '")
                                 else:
                                     output += f"\n  {o}"
             return output
@@ -277,16 +294,47 @@ class DecodingAlgorithms:
         return self.file_data
 
 
+def data(filename):
+    if not os.path.isfile(filename):
+        exit(f"# file not found!: {filename}")
+    try:
+        with open(filename, "r") as file:
+            content = file.read()
+    except UnicodeDecodeError:
+        with io.open_code(filename) as f:
+            content = read_code(f)
+    return content
+
+
 if __name__ == '__main__':
-    if len(sys.argv) > 2:
-        if not os.path.isfile(sys.argv[1]):
-            exit(f"# file not found!: {sys.argv[1]}")
-        try:
-            with open(sys.argv[1], "r") as file:
-                data = file.read()
-        except UnicodeDecodeError:
-            with io.open_code(sys.argv[1]) as f:
-                data = read_code(f)
-        DecodingAlgorithms(data, sys.argv[2])
+    if len(sys.argv) >= 3 and sys.argv[3].lower() == "@psh_team":
+        os.system("clear")
+        total_layers = 0
+        copy = False
+        while True:
+            print(f"@psh_team <developer mode> total layers: {total_layers}")
+            if not copy:
+                content = data(sys.argv[1])
+                copy = True
+            else:
+                content = data(sys.argv[2])
+
+            decoding_algorithms = DecodingAlgorithms(content, sys.argv[2])
+            total_layers += 1
+            os.system(f'python3 {__file__.rsplit("/", 1)[0]}/size.py {sys.argv[2]}')
+            console = Console()
+            syntax = Syntax(decoding_algorithms.file_data, "python")
+            console.print(syntax)
+            if decoding_algorithms.file_data == content:
+                print("# cannot decode this file!")
+                break
+            if input("Press [any key] to continue\nor [n] to stop\n: ").lower() == "n":
+                break
+            os.system("clear")
+
+
+    elif len(sys.argv) > 2:
+        DecodingAlgorithms(data(sys.argv[1]), sys.argv[2])
+
     else:
         print("USAGE:\n decode file.py output.py")

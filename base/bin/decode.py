@@ -307,7 +307,7 @@ def data(filename):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) >= 3 and sys.argv[3].lower() == "@psh_team":
+    if len(sys.argv) >= 4 and sys.argv[3].lower() == "@psh_team":
         os.system("clear")
         total_layers = 0
         copy = False
@@ -333,7 +333,7 @@ if __name__ == '__main__':
             os.system("clear")
 
 
-    elif len(sys.argv) > 2:
+    elif len(sys.argv) > 3:
         DecodingAlgorithms(data(sys.argv[1]), sys.argv[2])
 
     else:

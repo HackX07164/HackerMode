@@ -21,6 +21,8 @@ ENCODEING = "utf-8"
 OLD_EXEC = exec
 OLD_EVAL = eval
 ALGORITHOMS = (
+    "eval-filter",
+    "string-filter",
     "zlib",
     "marshal",
     "base16",
@@ -29,8 +31,6 @@ ALGORITHOMS = (
     "base85",
     "exec-function",
     "machine-code",
-    "eval-filter",
-    "string-filter",
 )
 COPYRIGHT = """
 # Decoded by HackerMode tool...

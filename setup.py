@@ -212,7 +212,7 @@ class Installer:
                 if module in BASE_PYHTON_MODULES:
                     self.InstalledSuccessfully['base'].append(True)
 
-            except ModuleNotFoundError:
+            except:
                 print(self.NotInstalledMsg(module, is_base=(module in BASE_PYHTON_MODULES)))
                 if module in BASE_PYHTON_MODULES:
                     self.InstalledSuccessfully['base'].append(False)

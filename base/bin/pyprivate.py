@@ -6,12 +6,15 @@ import base64
 import marshal
 import py_compile
 
-RUNPY: str = b"""#!/usr/bin/python3
-# Encode by HackerMode tool...
+from rich.console import Console
+from rich.syntax import Syntax
+
+RUNPY: str = """#!/usr/bin/python3
+# Encoded by HackerMode tool...
 # Copyright: PSH-TEAM
 # Follow us on telegram ( @psh_team )"""
 
-DECODE_SYNTAX = lambda _bytes: base64.b64decode(_bytes).decode()
+DECODE_SYNTAX = lambda _bytes: RUNPY + '\n' + base64.b64decode(_bytes).decode()
 
 SYNTAX_ENCRYPTION: dict = {
     "bz2": b'aW1wb3J0IGJ1aWx0aW5zCnggPSBsYW1iZGEgdCwgbTogYnVpbHRpbnMuZXZhbChmIl9faW1wb3J0X18oJ3t7bX19Jyl7e3R9fXByZXNzIikoe3NvdXJjZX0pCmJ1aWx0aW5zLmV4ZWMoYnVpbHRpbnMuY29tcGlsZSh4KCIuZGVjb20iLCAiYnoyIiksInN0cmluZyIsICJleGVjIikp',
@@ -62,15 +65,13 @@ class PyPrivate:
         
     @property
     def encryption(self) -> None:
+        content_file = self.syntax.format(source=self._bytes).encode()
+        size_file = __import__('size').Size
         with open(self.path, "wb") as f:
-            f.write(
-                RUNPY
-                + b"\n"
-                + self.syntax.format(
-                    source=self._bytes
-                ).encode()
-            )
+            f.write(content_file)
         print(f"\x1b[0m# \x1b[0;32m{self.model} ✓")
+        print(f"\x1b[0;33m{self.path}\x1b[0;31m:", size_file(self.path).size)
+        Console().print(Syntax(content_file.decode(), 'python'))
         
         
     @property
@@ -174,5 +175,7 @@ if __name__ == "__main__":
         exit(error)
     try:
         PyPrivate(path, model)
+    except ModuleNotFoundError:
+        exit("No HackerMode !!!")
     except Exception as e:
         exit(f'{e.__class__.__name__}: {str(e)}\n'+error)

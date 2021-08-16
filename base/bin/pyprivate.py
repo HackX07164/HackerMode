@@ -36,6 +36,7 @@ BASE64: list = [
 class PyPrivate:
     
     def __init__(self, path: str, model: str) -> None:
+        self.size_file = __import__('size').Size
         print("# Start Encryption Algorithm ...")
         self.path = path
         self.model = model
@@ -66,11 +67,11 @@ class PyPrivate:
     @property
     def encryption(self) -> None:
         content_file = self.syntax.format(source=self._bytes).encode()
-        size_file = __import__('size').Size
+        
         with open(self.path, "wb") as f:
             f.write(content_file)
         print(f"\x1b[0m# \x1b[0;32m{self.model} ✓")
-        print(f"\x1b[0;33m{self.path}\x1b[0;31m:", size_file(self.path).size)
+        print(f"\x1b[0;33m{self.path}\x1b[0;31m:", self.size_file(self.path).size)
         Console().print(Syntax(content_file.decode(), 'python'))
         
         

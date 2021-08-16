@@ -53,6 +53,7 @@ class PyPrivate:
                             self.source = self.reader
                             self._bytes = self.bytes
                             self.encryption
+            print("\x1b[0m# \x1b[0;33mDone ✓")
             return
         else:
             if model == "pyc":

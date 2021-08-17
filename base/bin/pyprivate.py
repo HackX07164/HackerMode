@@ -9,10 +9,12 @@ import py_compile
 from rich.console import Console
 from rich.syntax import Syntax
 
-RUNPY: str = """#!/usr/bin/python3
-# Encoded by HackerMode tool...
+
+COPYRIGHT: str = """# Encoded by HackerMode tool...
 # Copyright: PSH-TEAM
 # Follow us on telegram ( @psh_team )"""
+
+RUNPY: str = f"""#!/usr/bin/python3\n{COPYRIGHT}"""
 
 DECODE_SYNTAX = lambda _bytes: RUNPY + '\n' + base64.b64decode(_bytes).decode()
 
@@ -68,7 +70,6 @@ class PyPrivate:
     @property
     def encryption(self) -> None:
         content_file = self.syntax.format(source=self._bytes).encode()
-        
         with open(self.path, "wb") as f:
             f.write(content_file)
         print(f"\x1b[0m# \x1b[0;32m{self.model} ✓")
@@ -78,8 +79,12 @@ class PyPrivate:
         
     @property
     def reader(self) -> bytes:
+        check_copyright = f"""
+        \rwith open(__file__, 'rb') as f:
+        \r    if not ({COPYRIGHT.encode()} in f.read()):
+        \r        __import__('builtins').exit(f\"\"\"Copyright not found!\ntry write:\n\x1b[0;32m{COPYRIGHT}\x1b[0m\nin {{__file__}}\"\"\")\n""".encode()
         with open(self.path, "rb") as f:
-            return f.read()
+            return check_copyright + f.read()
 
     @property
     def bytes(self) -> bytes:

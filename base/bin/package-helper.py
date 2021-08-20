@@ -91,7 +91,7 @@ class PackagesHelper:
 
     def search(self, pattren: str) -> None:
         console = Console()
-        bar = ProgressBar(width=50, total=100)
+        bar = ProgressBar(width=shutil.get_terminal_size()[0] - 10, total=100)
         packages = re.findall(r"\n([\w\-\_\S]*)/", self._popen(f"pkg search {pattren}"))
         get_item = lambda key, data: data.get(key) if key in data else '[red]None[/red]'
         table = Table(

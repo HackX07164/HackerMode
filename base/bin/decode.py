@@ -7,22 +7,23 @@ import time
 import zlib
 import base64
 import marshal
-from pkgutil import read_code
+import multiprocessing
 
+from pkgutil import read_code
 from rich.console import Console
 from rich.syntax import Syntax
 from uncompyle6 import PYTHON_VERSION
 from uncompyle6.main import decompile
 
 sys.path.append(__file__.rsplit("/", 2)[0])
+sys.path.append(__file__.rsplit("/", 1)[0])
 
 CONFIG = __import__("config").Config
+SIZE = __import__('size').Size
 ENCODEING = "utf-8"
 OLD_EXEC = exec
 OLD_EVAL = eval
 ALGORITHOMS = (
-    "eval-filter",
-    "string-filter",
     "zlib",
     "marshal",
     "base16",
@@ -31,6 +32,8 @@ ALGORITHOMS = (
     "base85",
     "exec-function",
     "machine-code",
+    "eval-filter",
+    "string-filter",
 )
 COPYRIGHT = """
 # Decoded by HackerMode tool...
@@ -40,19 +43,6 @@ COPYRIGHT = """
 
 
 class CodeSearchAlgorithms:
-    @staticmethod
-    def bytecode(string: str) -> bytes:
-        pattern: str = r"""(((b|bytes\()["'])(.+)(["']))"""
-        length: int = 0
-        string_data: str = ""
-        for string in re.findall(pattern, string):
-            if len(string[3]) > length:
-                length = len(string[3])
-                string_data = string[3]
-        if not string_data:
-            raise Exception()
-        return eval(f"b'{string_data}'")
-
     @staticmethod
     def bytecode(string: str) -> bytes:
         pattern: str = r"""(((b|bytes\()["'])(.+)(["']))"""
@@ -306,6 +296,15 @@ def data(filename):
     return content
 
 
+def show_code():
+    print('')
+    syntax = Syntax(decoding_algorithms.file_data, "python")
+    console.print(syntax)
+
+def show_file_size(file):
+    print(f"# \033[1;32msize: {SIZE(file).size}\033[0m")
+
+
 if __name__ == '__main__':
     if len(sys.argv) == 4 and sys.argv[3].lower() == "@psh_team":
         os.system("clear")
@@ -321,17 +320,21 @@ if __name__ == '__main__':
 
             decoding_algorithms = DecodingAlgorithms(content, sys.argv[2])
             total_layers += 1
-            os.system(f'python3 {__file__.rsplit("/", 1)[0]}/size.py {sys.argv[2]}')
+            show_file_size(sys.argv[2])
             console = Console()
-            syntax = Syntax(decoding_algorithms.file_data, "python")
-            console.print(syntax)
+            p = multiprocessing.Process(target=show_code)
+            p.start()
+            p.join(2)
+            if p.is_alive():
+                p.kill()
+                print("# \033[1;33mcan't show the code because the file is to big!\033[0m")
+            print("")
             if decoding_algorithms.file_data == content:
-                print("# cannot decode this file!")
+                print("# \033[1;31mFailed to decode the file!\033[0m")
                 break
-            if input("Press [any key] to continue\nor [n] to stop\n: ").lower() == "n":
+            if input("Press [enter] to continue\nor [n] to stop\n: ").lower() == "n":
                 break
             os.system("clear")
-
 
     elif len(sys.argv) == 3:
         DecodingAlgorithms(data(sys.argv[1]), sys.argv[2])

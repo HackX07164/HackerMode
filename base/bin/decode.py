@@ -7,6 +7,7 @@ import time
 import zlib
 import base64
 import marshal
+import importlib
 import multiprocessing
 
 from pkgutil import read_code
@@ -18,9 +19,10 @@ from uncompyle6.main import decompile
 sys.path.append(__file__.rsplit("/", 2)[0])
 sys.path.append(__file__.rsplit("/", 1)[0])
 
+MAGIC_NUMBER: bytes = importlib.util.MAGIC_NUMBER
 CONFIG = __import__("config").Config
 SIZE = __import__('size').Size
-ENCODEING = "utf-8"
+ENCODEING: str = "utf-8"
 OLD_EXEC = exec
 OLD_EVAL = eval
 ALGORITHOMS = (
@@ -30,8 +32,8 @@ ALGORITHOMS = (
     "base32",
     "base64",
     "base85",
-    "exec-function",
     "machine-code",
+    "exec-function",
     "eval-filter",
     "string-filter",
 )
@@ -287,19 +289,26 @@ class DecodingAlgorithms:
 def data(filename):
     if not os.path.isfile(filename):
         exit(f"# file not found!: {filename}")
-    try:
-        with open(filename, "r") as file:
-            content = file.read()
-    except UnicodeDecodeError:
+
+    with open(filename, "rb") as bfile:
+        magic_number = bfile.read()[:4]
+
+    if MAGIC_NUMBER == magic_number:
         with io.open_code(filename) as f:
-            content = read_code(f)
-    return content
+            return read_code(f)
+    else:
+        try:
+            with open(filename, "r") as file:
+                return file.read()
+        except UnicodeDecodeError:
+            return None
 
 
 def show_code():
     print('')
     syntax = Syntax(decoding_algorithms.file_data, "python")
     console.print(syntax)
+
 
 def show_file_size(file):
     print(f"# \033[1;32msize: {SIZE(file).size}\033[0m")

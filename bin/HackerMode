@@ -3,7 +3,7 @@ import os
 import sys
 from rich import print
 sys.path.append(os.environ.get('VIRTUAL_ENV'))
-from setup import Installer
+from setup import HackerModeInstaller
 
 help_msg ="""
 [bold]USAGE:[/bold]

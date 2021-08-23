@@ -10,7 +10,6 @@
     },
     "pip3": {
       "termux": [
-        "pkg install openssl",
         "pip3 install --upgrade pip"
       ],
       "linux": [
@@ -18,20 +17,13 @@
         "pip3 install --upgrade pip"
       ]
     },
-    "git": {
-      "termux": [
-        "pkg install git"
-      ],
-      "linux": [
-        "sudo apt install git"
-      ]
-    },
     "gcc": {
       "termux": [
         "pkg install clang"
       ],
       "linux": [
-        "sudo apt install clang"
+        "sudo apt install gcc",
+        "sudo apt install pentium-builder"
       ]
     },
     "nmap": {
@@ -40,6 +32,14 @@
       ],
       "linux": [
         "sudo apt install nmap"
+      ]
+    },
+    "openssl": {
+      "termux": [
+        "pkg install openssl"
+      ],
+      "linux": [
+        "sudo apt install openssl"
       ]
     },
     "dart": {
@@ -54,5 +54,18 @@
         "sudo apt-get install dart"
       ]
     }
-  }
+  },
+  "PYTHON3_MODULES": [
+    "N4Tools",
+    "rich",
+    "uncompyle6",
+    "pyfiglet",
+    "python-bidi",
+    "arabic-reshaper",
+    "bs4",
+    "python-nmap",
+    "requests",
+    "flask",
+    "getmac"
+  ]
 }

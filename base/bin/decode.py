@@ -17,7 +17,6 @@ from uncompyle6 import PYTHON_VERSION
 from uncompyle6.main import decompile
 
 sys.path.append(__file__.rsplit("/", 2)[0])
-sys.path.append(__file__.rsplit("/", 1)[0])
 
 MAGIC_NUMBER: bytes = importlib.util.MAGIC_NUMBER
 CONFIG = __import__("config").Config

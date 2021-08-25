@@ -1,24 +1,24 @@
-#!/usr/bin/python3
-import os
+#!/usr/bin/python3 -B
 import sys
-from rich import print
-sys.path.append(os.environ.get('VIRTUAL_ENV'))
 from setup import HackerModeInstaller
 
-help_msg ="""
-[bold]USAGE:[/bold]
-  HackerMode <command>
-  
-[bold]COMMANDS:[/bold]
- update
- upgrade
- check
-"""[1:]
+help_msg = """
+\033[1mUSAGE:\033[0m
+  python3 -B HackerMode/ <command>
 
-try:
-    Installer.__getattribute__(sys.argv[1])()
-except IndexError:
-    print(help_msg)
-except AttributeError:
-    print(help_msg)
+\033[1mCOMMANDS:\033[0m
+ update   update the tool.
+ install  install HackerMode in the system.
+ check    check all module and packages. 
+ delete   delete the tool from the system.
+""".strip()
 
+if __name__ == "__main__":
+    HackerMode = HackerModeInstaller()
+    if len(sys.argv) > 1:
+        try:
+            HackerMode.__getattribute__(sys.argv[1])()
+        except Exception as e:
+            print(e)
+    else:
+        print(help_msg)

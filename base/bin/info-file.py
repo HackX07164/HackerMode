@@ -1,185 +1,196 @@
-import os,re,json
-from N4Tools.Design import ThreadAnimation
-from rich.table import Table
-from rich.live import Live
+#!/usr/bin/python
+import re
+import os
+import sys
+import time
+import base64
+
 from rich import box
-from time import sleep
-import sys, os
+from rich.table import Table
+from rich.panel import Panel
+from rich.filesize import decimal
+from rich.console import Console
+from rich.progress import (
+    Progress,
+    TextColumn,
+    BarColumn,
+    ProgressColumn,
+    SpinnerColumn
+)
 
-sys.path.append(os.path.abspath(__file__).split('/bin')[0])
-from shell import BaseShell
+class FileSizeColumn(ProgressColumn):
 
-class GetInfo:
-    def __init__(self,path):
-        self.path = path
-    def getsize(self,num):
-        G = num / 1024
-        tmp = "KB"
-        if G > 1024 :
-            G,tmp = G / 1024, 'MB'
-        if G > 1024 :
-            G,tmp = G / 1024, 'GB'
-        G = str(G).split('.')
-        return f"{G[0]}.{G[1][0:2]} {tmp}"
-    def dictinfo(self):
-        #Mode      -> { NameFile : [ repeat , sizeAllrepeat , { NameFile : SizeFile } ] }
-        #rest      -> [ SizeAll , { NameFile : SizeFile }]
-        #in_repeat -> { NumSize  : {Num:[ Paths] } } 
-        data={'Mode':{},
-              'rest':[0, {}],
-              'in_repeat': None}
-        in_repeat = {}
-        In_Repeat = {}
-        def addrest(n, k, v):
-            data['rest'][0] += n
-            data['rest'][1][k] = v
+    def render(self, task) -> str:
+        return f"[cyan]{decimal(task.completed)}"
 
-        for p,d,f in os.walk(self.path):
-            for Mode in f:
-                path = os.path.join(p,Mode)
-                size = os.path.getsize(path)
-                get_size = self.getsize(size)
-                #a=Mode.rfind('.')
-                out = Mode[Mode.rfind('.'):][1:]
-                if out:
-                    if not (len([x for x in (re.findall('[\W]*',out))if x])>0) \
-                    and '_' not in out and not out.isnumeric():
-                        if out not in data['Mode']:
-                            data['Mode'][out] = [1, size, {path: get_size}]
-                        if out not in In_Repeat:
-                            In_Repeat[out] = {}
-                        if size not in in_repeat:
-                            in_repeat[size] = path
-                        else:
-                            if size in In_Repeat[out]:
-                                In_Repeat[out][size] += [in_repeat[size], path]
-                            else:
-                                In_Repeat[out][size] = [in_repeat[size], path]
-                            In_Repeat[out][size] = list(set(In_Repeat[out][size]))
-                        data['Mode'][out][0] += 1
-                        data['Mode'][out][1] += size
-                        data['Mode'][out][2][path] = get_size
-#                        else:data['Mode'][out]=[1,size,{path:get_size}]
-                    else:
-                        addrest(size, path, get_size)
+
+class ParserFile:
+    def parser_model(self, name: str) -> str:
+        pattrens = {
+            "[green]python": "\.(?:py|pyc)$",
+            "[spring_green2]c++": "\.(?:cc|cpp|cxx|c|c\+\+|h|hpp|hh|hxx|\+\+h|h)$",
+            "[blue]java": "\.(?:java|class)$",
+            "[sandy_brown]progreming more": "\.(?:html|css|js|javascript|xml|dart|exe|json|bash|sh)$",
+            "[yellow]application": "\.(?:apk|exe)$",
+            "[steel_blue1]image": "\.(?:jpg|png|jpeg|gif|svg|ico)$",
+            "[green]️video": "\.(?:mp4|mkv)$",
+            "[magenta2]audio": "\.(?:mp3)$",
+            "[steel_blue]more": "."
+        }
+        for model, pattren in pattrens.items():
+            if re.findall(pattren, name):
+                return model
+
+    def parser_size(self, path) -> tuple:
+        sizes = {}
+        Max = 0
+        for p, dirs, files in os.walk(path):
+            for file in files:
+                model = self.parser_model(file)
+                try:
+                    size = os.path.getsize(os.path.join(p, file))
+                except FileNotFoundError:
+                    continue
+                Max += size
+                if model in sizes:
+                    sizes[model].append(size)
                 else:
-                    addrest(size, path, get_size)
-        Mode={}
-        for x in sorted(data['Mode']):
-            info = data['Mode'][x]
-            Mode[x] =data['Mode'][x] # [info[0], self.getsize(info[1]) ,info[2]]
-        data['Mode'] = Mode
-        data['rest'][0] = self.getsize(data['rest'][0])
-        In_Repeat = {x: In_Repeat[x] for x in sorted(In_Repeat)}
-        data['in_repeat'] = In_Repeat
+                    sizes[model] = [size]
+        return (sizes, Max)
+        
+    @staticmethod
+    def parser_sorted_file_by_size(path: str) -> dict:
+        data = {}
+        for p, dirs, files in os.walk(path):
+            for file in files:
+                file_path = os.path.join(p, file)
+                try:
+                    size = os.path.getsize(file_path)
+                    if size == 0:
+                        continue
+                except FileNotFoundError:
+                    continue
+                if size in data:
+                    data[size].append(file_path)
+                else:
+                    data[size] = [file_path]
         return data
 
-@ThreadAnimation()
-def GETdata(Thread, path):
-    data = GetInfo(path).dictinfo()
-    Thread.kill = True
-    return data
-
-class Input(BaseShell): #input...
-      def __init__(self, P, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.P = P
-        self.prompt = P
-        self.value = '.'
-        self.cmdloop()
-      do_dir = lambda self, arg: 'pass'
-      completenames = lambda self, *args: ['dir ']
-      def postcmd(self, *args):
-          self.prompt = self.P
-          if os.path.isdir(self.value):
-              return True
-          else:
-              print('Not Dir...!')
-      def onecmd(self, line):
-          line = line[line.find(' '):].strip()
-          self.value = line
-
-
-Data = GETdata(Input('\033[1;33mPath\033[1;36m~\033[1;31m/\033[1;37m$\033[0m').value)
-
-class Main(BaseShell):
-    ToolName = "Info-File"
-    remove = []
-    for x in Data['Mode'].keys():
-        exec(f'''
-def do_{x}(self, arg):
-    if arg == 'paths' :
-        self.paths("{x}")
-    elif arg == "size_all" :
-        print ('\033[0;33mSize_All \033[1;31m: \033[0;32m',GetInfo(".").getsize(Data["Mode"]["{x}"][1]))
-    elif arg == 'repeat' :
-        self.repeat("{x}")
-
-def complete_{x}(self, arg, *args):
-    all=['repeat', 'size_all',
-         'paths',
-        ]
-    return all if not arg else [x for x in all if x.startswith(arg)]''')
-    def paths(self, arg):
-        table = Table(
-                    expand=True, box=box.SQUARE_DOUBLE_HEAD,
-                    title="Paths", title_style="none")
-        table.add_column('Path', style="green")
-        table.add_column('Size', style='blue')
-        all = 0
-        with Live(table, refresh_per_second=1)as live:
-            for k,v in Data['Mode'][arg][2].items():
-                if k not in self.remove:
-                    table.add_row(k, str(v))
-                    all += 1
-        print (f'\033[0;33mPath_All\033[1;31m : \033[0;32m{all}\n\033[0;33mSize_All \033[1;31m: \033[0;32m{GetInfo(".").getsize(Data["Mode"][arg][1])}')
-
-    def reader(self, path):
-        with open(path, 'rb')as f:
+    @staticmethod
+    def read(path: str) -> bytes:
+        with open(path, "rb") as f:
             return f.read()
 
-    def repeat(self, arg):
-        all = Data['in_repeat'][arg]
-        k = list(all.keys())
-        P = []
-        Done = []
-        table = Table(
-                    expand=True, box=box.SQUARE_DOUBLE_HEAD,
-                    title="Repeat", title_style='none')
-        table.add_column('Path', style='green')
-        table.add_column('Size', style='blue')
-        table.add_column("Mode", style="cyan")
-        size_all = 0
-        size_all_repeat = 0
-        D = ''
-        with Live(table)as live:
-            a=[0]
-            repeat_all=0
-            for k,v in all.items():
-                a[0]+=k
-                a.append([k,v])#a.append([GetInfo('.').getsize(k),v])
-            #print (json.dumps(a,indent=2))
-            for x in a[1:]:
-                S=GetInfo('.').getsize(x[0])
-                if len(x[1]) == 2:
-                    if self.reader(x[1][0]) == self.reader(x[1][1]):
-                        size_all_repeat += x[0]
-                        repeat_all += 1
-                        table.add_row(x[1][0] , S, "orignal")
-                        table.add_row(x[1][1] , S, "plus")
-                elif len(x[1]) > 2:
-                    original=x[1][0]
-                    r=self.reader(original)
-                    N = 0
-                    for p in x[1][1:]:
-                        if r == self.reader(p):
-                            if N==0:
-                                table.add_row(original, S, "original")
-                            table.add_row(p,S,"plus")
-                            size_all_repeat += x[0]
-                            N+=1
-                            repeat_all+=1
-                    live.update(table)
-        print (f'\033[0;33mRepeat_All\033[1;31m :\033[0;32m {repeat_all}\n\033[0;33mSize_All_Repeat \033[1;31m:\033[0;32m {GetInfo(".").getsize(size_all_repeat)}')
-Main().cmdloop()
+class Specialist:
+    def __init__(self, path: str) -> None:
+        with Progress(
+            TextColumn("[progress.desciption]{task.description}"),
+            SpinnerColumn(spinner_name="point"),
+            BarColumn(),
+            transient=True,
+        ) as progress:
+            progress.add_task("[green]Starting ", start=False)
+            self.sizes, self.Max = ParserFile().parser_size(path)
+        
+    def start(self, sleep: int=0.00001) -> None:
+        with Progress(
+            SpinnerColumn(spinner_name="dots9", finished_text="[blue]✓"),
+            TextColumn("[progress.desciption]{task.description}"),
+            BarColumn(),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            FileSizeColumn()
+        ) as progress:
+            tasks = {
+                k: progress.add_task(f"{k}", total=self.Max)
+                for k, v in sorted(self.sizes.items())
+            }
+            
+            progress.add_task("[cyan]ALL", total=self.Max)
+            while list(self.sizes.values()) != [[]]*len(self.sizes):
+                for k, v in self.sizes.items():
+                    for a in v:
+                        progress.advance(tasks[k], a)
+                        progress.advance(len(tasks), a)
+                        self.sizes[k] = self.sizes[k][1:] # pop first
+                        break
+                    time.sleep(sleep)
 
+class RepeaterFiles:
+    def __init__(self, path: str) -> None:
+        self.data = ParserFile.parser_sorted_file_by_size(path)
+
+
+    def start(self) -> Table:
+        with Progress(
+            TextColumn("[progress.desciption]{task.description}"),
+            BarColumn(),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            transient=True,
+        ) as progress:
+            progress.add_task("[green]Starting ", total=len(self.data))
+            repeater, size_repeater = 0, 0
+            read = ParserFile.read
+            table = Table(
+                title="Repeater files",
+                box=box.ROUNDED,
+                expand=False,
+            )
+            table.add_column("path", style="cyan", header_style="bright_cyan")
+            table.add_column("size", style="blue", header_style="bright_blue")
+            table.add_column("model", style="yellow", header_style="bright_yellow")
+            for size, paths in sorted(self.data.items()):
+                paths = sorted(paths)
+                #print(paths[0])
+                original = read(paths[0])
+                row = []
+                for path in paths[1:]:
+                 #   print(path)
+                    if read(path) == original:
+                        row.append((path, decimal(size), "repeater"))
+                        size_repeater += size
+                    
+                if row:
+                    table.add_row(paths[0], decimal(size), "original")
+                    list(map(lambda args: table.add_row(*args, style="dim"), row))
+                    repeater += len(row)
+                # remove size CPU
+                del original
+                del row
+                del paths
+                progress.advance(0, 1)
+            table.caption = f"The number of duplicate files is equal [blue]{repeater}[/blue] and size is [blue]{decimal(size_repeater)}[/blue]"
+        Console().print(
+            table
+        )
+            
+                
+class InfoFile:
+    @staticmethod
+    def specialist(path: str) -> None:
+        Specialist(path).start()
+
+    @staticmethod
+    def repeater(path: str) -> None:
+        RepeaterFiles(path).start()
+
+    @staticmethod
+    def help_massage() -> None:
+        Console().print(
+            Panel(
+                base64.b64decode(b'ewogICAgW2JsdWVdZnJvbVsvYmx1ZV1bcmVkXTpbL3JlZF0gW2N5YW5dQHBzaF90ZWFtWy9jeWFuXVtyZWRdLlsvcmVkXVt5ZWxsb3ddSGFja2VyTW9kZVsveWVsbG93XSwKICAgIFtibHVlXWV4YW1wbGVbcmVkXTpbL3JlZF0KICAgICAgICBbcmVkXSQgW29yY2hpZDJdaW5mb1svb3JjaGlkMl0tW29yY2hpZDJdZmlsZVsvb3JjaGlkMl1bL3JlZF0gW2N5YW5dc3BlY2lhbGlzdFsvY3lhbl0gW3llbGxvd11wYXRoL3RvL215ZGlyL1sveWVsbG93XQogICAgICAgIFtyZWRdJCBbb3JjaGlkMl1pbmZvWy9vcmNoaWQyXS1bb3JjaGlkMl1maWxlWy9vcmNoaWQyXVsvcmVkXSBbY3lhbl1zcGVjaWFsaXN0Wy9jeWFuXSBbeWVsbG93XS9zZGNhcmQvWy95ZWxsb3ddCiAgICAgICAgW3JlZF0kIFtvcmNoaWQyXWluZm9bL29yY2hpZDJdLVtvcmNoaWQyXWZpbGVbL29yY2hpZDJdWy9yZWRdIFtjeWFuXXJlcGVhdGVyWy9jeWFuXSBbeWVsbG93XXBhdGgvdG8vbXlkaXIvWy95ZWxsb3ddCiAgICAgICAgW3JlZF0kIFtvcmNoaWQyXWluZm9bL29yY2hpZDJdLVtvcmNoaWQyXWZpbGVbL29yY2hpZDJdWy9yZWRdIFtjeWFuXXJlcGVhdGVyWy9jeWFuXSBbeWVsbG93XS9zZGNhcmQvWy95ZWxsb3ddCiAgICBzcGVjaWFsaXN0Wy9ibHVlXVtyZWRdOlsvcmVkXSBTcGVjaWFsaXN0IGFsbCBmaWxlcywKICAgIFtibHVlXXJlcGVhdGVyWy9ibHVlXVtyZWRdOlsvcmVkXSBmaW5kIGFuZCBnZXQgYWxsIGZpbGUgcmVwZWF0ZXIsCn0=').decode(),
+                title="[white]info[red]-[/red]file[/white]",
+                expand=False,
+                border_style="cyan",
+            )
+        ); exit()
+
+if __name__ == "__main__":
+    argv = sys.argv[1:]
+    if len(argv) >= 2:
+        try:
+            eval(f'InfoFile.{argv[0]}')(argv[1])
+        except Exception:
+            InfoFile.help_massage()
+    else:
+        InfoFile.help_massage()
+    

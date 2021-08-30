@@ -157,7 +157,7 @@ def massage_help():
     for x in range(len(ENCRIPTION)):
         point = str(round(x /  (len(ENCRIPTION)-1)*100))
         print(' '*(4-len(point)) + '   \x1b[0;34m' + point + "%\x1b[0;33m", ENCRIPTION[x])
-    print('\x1b[0;32mexamples:\x1b[0;33m\n    $ pyprivate file.py marshal\n    $ pyprivate path/mydir layers\n    $ pyprivate file.py bz2\n    $ pyprivate file.py lambda'.replace("pyprivate", "\x1b[0;32mpyprivate\x1b[0;33m"))
+    print('\x1b[0;32mexamples:\x1b[0;33m\n    $ pyprivate file.py marshal\n    $ pyprivate file.py layers\n    $ pyprivate file.py bz2\n    $ pyprivate file.py multiple'.replace("pyprivate", "\x1b[0;32mpyprivate\x1b[0;33m"))
     exit()
 
 

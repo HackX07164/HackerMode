@@ -106,7 +106,7 @@ class PyPrivate:
 
     def eval2(self) -> None:
         code_marshal = marshal.dumps(compile(self.read(), "<string>", "exec"))
-        self.write(f"""eval({self.code_eval('builtins.exec')})(eval({self.code_eval('__import__')})(eval({self.code_eval('"marshal"')})).loads({code_marshal}))""")
+        self.write(f"""import builtins\neval({self.code_eval('builtins.exec')})(eval({self.code_eval('__import__')})(eval({self.code_eval('"marshal"')})).loads({code_marshal}))""")
 
     def binary(self) -> None:
         data = list(map(lambda t: int(bin(ord(t))[2:]), self.read().decode()))

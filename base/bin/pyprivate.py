@@ -69,7 +69,7 @@ class PyPrivate:
         thread.join(4)
         if thread.is_alive():
             thread.kill()
-            print("\x1b[0;34m# \x1b[0;33mcan't show the code because the file is the big!")
+            print("\x1b[0;34m# \x1b[0;33mcan't show the code because the file is to big!")
 
 
     def code_eval(self, text: str) -> str:

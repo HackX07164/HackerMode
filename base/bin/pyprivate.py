@@ -9,9 +9,8 @@ import multiprocessing
 
 
 from rich.syntax import Syntax
-from rich.filesize import decimal
 from rich.console import Console
-from rich.progress import Progress, TextColumn, SpinnerColumn
+from rich.progress import Progress,TextColumn, SpinnerColumn
 
 
 copyright: str = b"""# Encoded by HackerMode tool...

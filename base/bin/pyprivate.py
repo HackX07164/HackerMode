@@ -160,25 +160,25 @@ class PyPrivate:
         console.print(f"""\r[green]example:[/green]\n    [red]$ [blue]pyprivate [yellow]file.py [cyan]function\n    [red]$ [blue]pyprivate [yellow]file.py [cyan]multiple\n    [red]$ [blue]pyprivate [yellow]file.py [cyan]layers\n[green]encryption:\n{sort_encode}""")
         exit()
 
-
-def main(progress):
-    argv = sys.argv[1:]
-    if len(argv) >= 2:
-        path, model = argv
-    else:
-        PyPrivate.massage()
-    if os.path.isdir(path):
-        PyPrivate.massage()
-    elif not os.path.exists(path):
-            console.print("[blue]#[/blue] No such file")
-
-    try:
-        progress.add_task("")
-        pyprivate = PyPrivate(path, model)
-        pyprivate.start()
-    except Exception as e:
-        console.print(f"[red]{e.__class__.__name__}[/red]: {str(e)}")
-
+    @classmethod
+    def main(cls, progress):
+        argv = sys.argv[1:]
+        if len(argv) >= 2:
+            path, model = argv
+        else:
+            cls.massage()
+        if os.path.isdir(path):
+            cls.massage()
+        elif not os.path.exists(path):
+                console.print("[blue]#[/blue] No such file")
+    
+        try:
+            progress.add_task("")
+            pyprivate = cls(path, model)
+            pyprivate.start()
+        except Exception as e:
+            console.print(f"[red]{e.__class__.__name__}[/red]: {str(e)}")
+    
 if __name__ == '__main__':
     with Progress(
         TextColumn("[cyan]Encode"),
@@ -186,4 +186,4 @@ if __name__ == '__main__':
         console=console,
         transient=True,
     ) as progress:
-        main(progress)
+        PyPrivate.main(progress)

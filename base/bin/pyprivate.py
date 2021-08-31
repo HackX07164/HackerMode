@@ -51,7 +51,7 @@ class PyPrivate:
             self.path = filename
             self.model = model
             with open(filename, 'rb') as f:
-                self.source = check + f.read()
+                self.source = (check if model != 'pyc' else b'') + f.read()
 
 
     def get_source(self, model: str) -> None:
@@ -103,11 +103,12 @@ class PyPrivate:
         return f"""import builtins\ndata = ({data}, eval("\\x5b\\x62\\x75\\x69\\x6c\\x74\\x69\\x6e\\x73\\x2e\\x65\\x78\\x65\\x63\\x2c\\x20\\x6c\\x61\\x6d\\x62\\x64\\x61\\x20\\x63\\x3a\\x20\\x62\\x75\\x69\\x6c\\x74\\x69\\x6e\\x73\\x2e\\x63\\x6f\\x6d\\x70\\x69\\x6c\\x65\\x28\\x63\\x2c\\x20\\x27\\x3c\\x73\\x74\\x72\\x69\\x6e\\x67\\x3e\\x27\\x2c\\x20\\x27\\x65\\x78\\x65\\x63\\x27\\x29\\x2c\\x20\\x6c\\x61\\x6d\\x62\\x64\\x61\\x20\\x74\\x3a\\x20\\x63\\x68\\x72\\x28\\x69\\x6e\\x74\\x28\\x66\\x27\\x30\\x62\\x7b\\x74\\x7d\\x27\\x2c\\x20\\x32\\x29\\x29\\x2c\\x20\\x6d\\x61\\x70\\x2c\\x20\\x6c\\x61\\x6d\\x62\\x64\\x61\\x20\\x74\\x3a\\x20\\x27\\x27\\x2e\\x6a\\x6f\\x69\\x6e\\x28\\x74\\x29\\x5d"))\ndata[1][0](data[1][1](data[1][-1](data[1][-2](data[1][-3], data[0]))))"""
 
     @property
-    def pyc(self) -> None:
+    def pyc(self) -> bytes:
         try:
             py_compile.compile(self.path, f"{self.path}c", doraise=True)
         except py_compile.PyCompileError as e:
             raise SyntaxError(f"{e.exc_value}")
+        return b'( pyc.code )'
 
     @property
     def function(self) -> None:
@@ -136,11 +137,12 @@ class PyPrivate:
 
     def start(self) -> None:
         source = copyright + self.get_source(self.model)
-        with open(self.path, "wb") as f:
-            f.write(source)
+        if self.model != "pyc":
+            with open(self.path, "wb") as f:
+                f.write(source)
         self.log(f"{self.model}")
 
-        self.log(f"{decimal(len(source))}", " [plum2]Size  ")
+        self.log(f"{decimal(len(source) if self.model != 'pyc' else os.path.getsize(self.path + 'c'))}", " [plum2]Size  ")
         thread = multiprocessing.Process(target=lambda : console.print(Syntax(source.decode(), "python")))
         thread.start()
         thread.join(4)

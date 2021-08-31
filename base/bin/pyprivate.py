@@ -166,8 +166,8 @@ class PyPrivate:
     def main(cls, progress):
         argv = sys.argv[1:]
         if len(argv) >= 2:
-            path, model = argv
-        else:
+            path, model, *args = argv
+        else: 
             cls.massage()
         if os.path.isdir(path):
             cls.massage()

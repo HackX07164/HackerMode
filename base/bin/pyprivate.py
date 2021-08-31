@@ -72,33 +72,33 @@ class PyPrivate:
         return f"'{code}'"
 
 
-    def base64(self, model: str) -> None:
+    def base64(self, model: str) -> str:
         return f"""import builtins\nimport base64\nbuiltins.exec(builtins.compile(base64.b{model[-2:]}decode({getattr(base64, 'b' + model[-2:] + 'encode')(self.source)}), "<string>", "exec"))"""
 
     @property
-    def bz2(self) -> None:
+    def bz2(self) -> str:
         return f"""import builtins\nx = lambda t, m: eval(f"__import__(\'{{m}}\'){{t}}press")({bz2.compress(self.source)})\nbuiltins.exec(builtins.compile(x(".decom", "2zb"[::-1]),"string", "exec"))"""
 
     @property
-    def zlib(self) -> None:
+    def zlib(self) -> str:
         return f"""import builtins\nx = lambda t, m: eval(f"__import__(\'{{m}}\'){{t}}press")({zlib.compress(self.source)})\nbuiltins.exec(builtins.compile(x(".decom", "bilz"[::-1]),"string", "exec"))"""
 
     @property
-    def marshal(self) -> None:
+    def marshal(self) -> str:
         return f"""import builtins\nimport marshal as m\nbuiltins.exec(m.loads({marshal.dumps(compile(self.source, '<string>', 'exec'))}))"""
 
     @property
-    def eval(self) -> None:
+    def eval(self) -> str:
         encode = ''.join(map(lambda t: chr(eval(f'ord(t) {"-" if ord(t) + 100 > 1114111 else "+"} 100')), self.source.decode())).encode()
         return f"""import builtins\ndata = ({encode}, eval('\\x5b\\x62\\x75\\x69\\x6c\\x74\\x69\\x6e\\x73\\x2e\\x65\\x78\\x65\\x63\\x2c\\x20\\x6c\\x61\\x6d\\x62\\x64\\x61\\x20\\x63\\x3a\\x20\\x62\\x75\\x69\\x6c\\x74\\x69\\x6e\\x73\\x2e\\x63\\x6f\\x6d\\x70\\x69\\x6c\\x65\\x28\\x63\\x2c\\x20\\x27\\x3c\\x73\\x74\\x72\\x69\\x6e\\x67\\x3e\\x27\\x2c\\x20\\x27\\x65\\x78\\x65\\x63\\x27\\x29\\x2c\\x20\\x6c\\x61\\x6d\\x62\\x64\\x61\\x20\\x74\\x3a\\x20\\x63\\x68\\x72\\x28\\x28\\x6f\\x72\\x64\\x28\\x74\\x29\\x2d\\x31\\x30\\x30\\x29\\x20\\x20\\x69\\x66\\x20\\x6f\\x72\\x64\\x28\\x74\\x29\\x20\\x2b\\x20\\x31\\x30\\x30\\x20\\x3e\\x20\\x31\\x31\\x31\\x34\\x31\\x31\\x31\\x20\\x65\\x6c\\x73\\x65\\x20\\x28\\x6f\\x72\\x64\\x28\\x74\\x29\\x20\\x2d\\x20\\x31\\x30\\x30\\x29\\x29\\x2c\\x20\\x6d\\x61\\x70\\x2c\\x20\\x6c\\x61\\x6d\\x62\\x64\\x61\\x20\\x74\\x3a\\x20\\x27\\x27\\x2e\\x6a\\x6f\\x69\\x6e\\x28\\x74\\x29\\x5d'))\ndata[1][0](data[1][1](data[1][-1](data[1][-2](data[1][-3], data[0].decode()))))"""
 
     @property
-    def eval2(self) -> None:
+    def eval2(self) -> str:
         code_marshal = marshal.dumps(compile(self.source, "<string>", "exec"))
         return f"""import builtins\neval({self.code_eval('builtins.exec')})(eval({self.code_eval('__import__')})(eval({self.code_eval('"marshal"')})).loads({code_marshal}))"""
 
     @property
-    def binary(self) -> None:
+    def binary(self) -> str:
         data = list(map(lambda t: int(bin(ord(t))[2:]), self.source.decode()))
         return f"""import builtins\ndata = ({data}, eval("\\x5b\\x62\\x75\\x69\\x6c\\x74\\x69\\x6e\\x73\\x2e\\x65\\x78\\x65\\x63\\x2c\\x20\\x6c\\x61\\x6d\\x62\\x64\\x61\\x20\\x63\\x3a\\x20\\x62\\x75\\x69\\x6c\\x74\\x69\\x6e\\x73\\x2e\\x63\\x6f\\x6d\\x70\\x69\\x6c\\x65\\x28\\x63\\x2c\\x20\\x27\\x3c\\x73\\x74\\x72\\x69\\x6e\\x67\\x3e\\x27\\x2c\\x20\\x27\\x65\\x78\\x65\\x63\\x27\\x29\\x2c\\x20\\x6c\\x61\\x6d\\x62\\x64\\x61\\x20\\x74\\x3a\\x20\\x63\\x68\\x72\\x28\\x69\\x6e\\x74\\x28\\x66\\x27\\x30\\x62\\x7b\\x74\\x7d\\x27\\x2c\\x20\\x32\\x29\\x29\\x2c\\x20\\x6d\\x61\\x70\\x2c\\x20\\x6c\\x61\\x6d\\x62\\x64\\x61\\x20\\x74\\x3a\\x20\\x27\\x27\\x2e\\x6a\\x6f\\x69\\x6e\\x28\\x74\\x29\\x5d"))\ndata[1][0](data[1][1](data[1][-1](data[1][-2](data[1][-3], data[0]))))"""
 
@@ -111,11 +111,11 @@ class PyPrivate:
         return b'( pyc.code )'
 
     @property
-    def function(self) -> None:
+    def function(self) -> bytes:
         return f"""import builtins\n(lambda a: a(builtins, {self.code_eval('exec')}))(eval({self.code_eval('getattr')}))((lambda i,m: m(i({self.code_eval('marshal')}), {self.code_eval('loads')})( m(i({self.code_eval('base64')}), {self.code_eval('b64decode')})({base64.b64encode(marshal.dumps(compile(self.source, '<string>', 'exec')))})))(eval({self.code_eval('__import__')}), eval({self.code_eval('getattr')})))""".encode()
 
     @property
-    def multiple(self) -> None:
+    def multiple(self) -> bytes:
         code = marshal.dumps(compile(self.source, "<string>", "exec"))
         d = len(code) // 60 # 61
         d = d if d > 0 else 1
@@ -127,7 +127,7 @@ class PyPrivate:
         return encode
 
     @property
-    def layers(self) -> None:
+    def layers(self) -> bytes:
         for model in encode:
             if model not in ["bz2", "eval", "binary", "pyc", "layers"]:
                 self.source = self.get_source(model)
@@ -163,7 +163,7 @@ class PyPrivate:
         exit()
 
     @classmethod
-    def main(cls, progress):
+    def main(cls, progress) -> None:
         argv = sys.argv[1:]
         if len(argv) >= 2:
             path, model, *args = argv

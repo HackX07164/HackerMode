@@ -37,6 +37,7 @@ encode = [
     "binary",
     "pyc",
     "function",
+    "executable", 
     "multiple",
     "layers",
 ]
@@ -113,6 +114,35 @@ class PyPrivate:
     @property
     def function(self) -> bytes:
         return f"""import builtins\n(lambda a: a(builtins, {self.code_eval('exec')}))(eval({self.code_eval('getattr')}))((lambda i,m: m(i({self.code_eval('marshal')}), {self.code_eval('loads')})( m(i({self.code_eval('base64')}), {self.code_eval('b64decode')})({base64.b64encode(marshal.dumps(compile(self.source, '<string>', 'exec')))})))(eval({self.code_eval('__import__')}), eval({self.code_eval('getattr')})))""".encode()
+
+
+    @property
+    def executable(self) -> bytes:
+        code = marshal.dumps(compile(self.source, "<string>", "exec"))
+        length = len(code)
+        plus = round(length / 2.5)
+        char = lambda t: list(map(ord, t))[::-1]
+        codec = [
+            [f"builtins.exec(i({char('base64')}, {char('b64decode')})({{source}}))", base64.b64encode],
+            [f"builtins.exec(i({char('bz2')}, {char('decompress')})({{source}}))", bz2.compress],
+            [f"builtins.exec(i({char('zlib')}, {char('decompress')})({{source}}))", zlib.compress],
+            [f"builtins.exec(i({char('marshal')}, {char('loads')})({{source}}))", lambda c: marshal.dumps(compile(c, '<string>', 'exec'))],
+        ]
+        execs = []
+        index = 0
+        for i in range(0, length + plus, plus):
+            execs.append(
+                codec[index][0].format(
+                    source=codec[index][1](f'i{index} = {code[i-plus:i]}'.encode()),
+                )
+            )
+            index += 1
+        main_exec = codec[-1][0].format(
+            source=codec[-1][1](f'builtins.exec(__import__("marshal").loads({" + ".join("i" + str(x) for x in range(len(codec)))}))'.encode())
+        )
+        return f"""import builtins\ni = lambda n, l: getattr(builtins, {self.code_eval('eval')})(getattr('', {self.code_eval('join')})(getattr(builtins, {self.code_eval('map')})(chr, [95, 95, 105, 109, 112, 111, 114, 116, 95, 95, 40, 39, *n[::-1], 39, 41, 46, *l[::-1]])))\n{chr(10).join(execs)}\n{main_exec}""".encode()
+        
+        
 
     @property
     def multiple(self) -> bytes:

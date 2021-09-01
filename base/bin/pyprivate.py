@@ -37,6 +37,7 @@ encode = [
     "binary",
     "pyc",
     "function",
+    "zip",
     "executable", 
     "multiple",
     "layers",
@@ -115,6 +116,16 @@ class PyPrivate:
     def function(self) -> bytes:
         return f"""import builtins\n(lambda a: a(builtins, {self.code_eval('exec')}))(eval({self.code_eval('getattr')}))((lambda i,m: m(i({self.code_eval('marshal')}), {self.code_eval('loads')})( m(i({self.code_eval('base64')}), {self.code_eval('b64decode')})({base64.b64encode(marshal.dumps(compile(self.source, '<string>', 'exec')))})))(eval({self.code_eval('__import__')}), eval({self.code_eval('getattr')})))""".encode()
 
+    @property
+    def zip(self) -> bytes:
+        code = zlib.compress(
+            bz2.compress(
+                marshal.dumps(
+                    compile(self.source, "<string>", "exec")
+                )
+            )
+        )
+        return f"""import builtins\nbuiltins.exec(eval(getattr(getattr('', {self.code_eval('join')})(getattr(builtins, {self.code_eval('map')})(chr, [95, 95, 105, 109, 112, 111, 114, 116, 95, 95, 40, 39, 109, 97, 114, 115, 104, 97, 108, 39, 41, 46, 108, 111, 97, 100, 115, 40, 95, 95, 105, 109, 112, 111, 114, 116, 95, 95, 40, 39, 98, 122, 50, 39, 41, 46, 100, 101, 99, 111, 109, 112, 114, 101, 115, 115, 40, 95, 95, 105, 109, 112, 111, 114, 116, 95, 95, 40, 39, 122, 108, 105, 98, 39, 41, 46, 100, 101, 99, 111, 109, 112, 114, 101, 115, 115, 40, 123, 99, 111, 100, 101, 125, 41, 41, 41])), {self.code_eval('format')})(code={code})))""".encode()
 
     @property
     def executable(self) -> bytes:
@@ -159,7 +170,7 @@ class PyPrivate:
     @property
     def layers(self) -> bytes:
         for model in encode:
-            if model not in ["bz2", "eval", "binary", "pyc", "layers"]:
+            if model not in ["bz2", "zip", "eval", "binary", "pyc", "layers"]:
                 self.source = self.get_source(model)
                 self.log(f"{model}")
         return self.source

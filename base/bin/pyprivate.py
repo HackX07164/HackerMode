@@ -17,7 +17,7 @@ from rich.progress import Progress, TextColumn, SpinnerColumn, BarColumn
 
 console = Console(record=True)
 
-copyright: str = b"""# Encoded by HackerMode tool...\n# Copyright: PSH-TEAM\n# Follow us on telegram ( @psh_team )"""
+copyright: str = b"""# Encoded by HackerMode tool...\n# Copyright: PSH-TEAM\n# Follow us on telegram ( @psh_team )\n"""
 check = f"""with open(__file__, 'rb') as check:exit(f\"\"\"Copyright not found!\ntry write:\n\x1b[0;32m{copyright.decode()[:-1]}\x1b[0m\nin {{__file__}}\"\"\") if not ({copyright} in check.read()) else None\n""".encode()
 encode = [
     "base64", "base16",

@@ -54,4 +54,5 @@ def App(Thread):
     print('\n'.join(out))
 
 
-App()
+if __name__ == "__main__":
+    App()

@@ -7,12 +7,23 @@ import time
 import zlib
 import base64
 import marshal
-from pkgutil import read_code
+import importlib
+import multiprocessing
 
+from pkgutil import read_code
+from rich.console import Console
+from rich.syntax import Syntax
 from uncompyle6 import PYTHON_VERSION
 from uncompyle6.main import decompile
 
-ENCODEING = "utf-8"
+sys.path.append(__file__.rsplit("/", 2)[0])
+
+MAGIC_NUMBER: bytes = importlib.util.MAGIC_NUMBER
+CONFIG = __import__("config").Config
+SIZE = __import__('size').Size
+ENCODEING: str = "utf-8"
+OLD_EXEC = exec
+OLD_EVAL = eval
 ALGORITHOMS = (
     "zlib",
     "marshal",
@@ -21,6 +32,7 @@ ALGORITHOMS = (
     "base64",
     "base85",
     "machine-code",
+    "exec-function",
     "eval-filter",
     "string-filter",
 )
@@ -46,8 +58,8 @@ class CodeSearchAlgorithms:
         return eval(f"b'{string_data}'")
 
     @staticmethod
-    def eval_filter(string: str):
-        pattern: str = r"(eval(?:[\s]+)?\()"
+    def function(string: str, function_name):
+        pattern: str = r"(" + function_name + r"(?:[\s]+)?\()"
         if len(eval_poss := re.findall(pattern, string)) < 0:
             raise Exception()
         for eval_pos in eval_poss:
@@ -77,6 +89,14 @@ class CodeSearchAlgorithms:
 class DecodingAlgorithms:
     def __init__(self, file_data, save_file):
         self.file_data = file_data
+        self._custom_exec_data = None
+        self._custom_compile_data = None
+        self._custom_eval_data = None
+        self._custom_data = None
+
+        if CONFIG.get('actions', 'DEBUG', cast=bool, default=False):
+            sys.__dict__['EXIT'.lower()]()
+
         print("Finding the best algorithm:")
         for algogithom in ALGORITHOMS:
             try:
@@ -97,15 +117,19 @@ class DecodingAlgorithms:
                     layers += 1
                     print(f"# \033[1;32m{algogithom} layers {layers} ✓\033[0m", end="\r")
                     time.sleep(.02)
+                    if not self.file_data.strip():
+                        raise Exception()
                 except Exception:
                     print(f"\n# \033[1;32mDONE ✓\033[0m")
                     break
             break
         try:
             with open(save_file, "w") as file:
-
-                file.write(COPYRIGHT+self.file_data)
-        except Exception:
+                if not COPYRIGHT in self.file_data:
+                    file.write(COPYRIGHT + self.file_data)
+                else:
+                    file.write(self.file_data)
+        except Exception as e:
             print("# \033[1;31mFailed to decode the file!\033[0m")
 
     def marshal(self) -> str:
@@ -140,6 +164,68 @@ class DecodingAlgorithms:
             CodeSearchAlgorithms.bytecode(self.file_data)
         ).decode(ENCODEING)
 
+    def exec_function(self) -> str:
+        self._custom_exec_data = None
+        self._custom_compile_data = None
+        self._custom_eval_data = None
+
+        def exec(*args):
+            self._custom_exec_data = args[0]
+
+        def compile(*args):
+            self._custom_compile_data = args[0]
+
+        def eval(*args):
+            self._custom_eval_data = args[0]
+
+        OLD_EXEC(self.file_data)
+        if self._custom_exec_data != None:
+            self._custom_data = self._custom_exec_data
+        elif self._custom_compile_data != None:
+            self._custom_data = self._custom_compile_data
+        elif self._custom_eval_data != None:
+            self._custom_data = self._custom_eval_data
+
+        if type(self._custom_data) == bytes:
+            return self._custom_data.decode(ENCODEING)
+        elif type(self._custom_data) == str:
+            return self._custom_data
+
+        if self._custom_exec_data:
+            bytecode = self._custom_exec_data
+        elif self._custom_compile_data:
+            bytecode = self._custom_compile_data
+        else:
+            bytecode = self._custom_eval_data
+
+        try:
+            out = io.StringIO()
+            version = PYTHON_VERSION if PYTHON_VERSION < 3.9 else 3.8
+            decompile(version, bytecode, out, showast=False)
+            return "\n".join(out.getvalue().split("\n")[4:]) + '\n'
+        except Exception:
+            output: str = ""
+            for arg in dir(bytecode):
+                if arg.startswith("co_"):
+                    out = bytecode.__getattribute__(arg)
+                    if not (type(out) in (tuple, list, set, dict)):
+                        if type(out) is str:
+                            output += f"\n{arg.replace('co_', '').upper()}: '{out}'"
+                        else:
+                            output += f"\n{arg.replace('co_', '').upper()}: {out}"
+            for arg in dir(bytecode):
+                if arg.startswith("co_"):
+                    out = bytecode.__getattribute__(arg)
+                    if type(out) in (tuple, list, set, dict):
+                        if out:
+                            output += f"\n\n{arg.replace('co_', '').upper()}:"
+                            for o in out:
+                                if type(o) is str:
+                                    output += (f"\n  {bytes(o, ENCODEING)}").replace(" b'", " '")
+                                else:
+                                    output += f"\n  {o}"
+            return output
+
     def machine_code(self) -> str:
         out = io.StringIO()
         version = PYTHON_VERSION if PYTHON_VERSION < 3.9 else 3.8
@@ -150,36 +236,40 @@ class DecodingAlgorithms:
         return data
 
     def eval_filter(self) -> str:
-        all_eval_functions = list(set(list(CodeSearchAlgorithms.eval_filter(self.file_data))))
-        for func in all_eval_functions:
-            if not func.strip():
-                all_eval_functions.remove(func)
+        def root_search(all_eval_functions):
+            for func in all_eval_functions:
+                if not func.strip():
+                    all_eval_functions.remove(func)
 
-        exceptions = 0
-        for eval_f in all_eval_functions:
-            try:
-                eval_body = re.findall(r"\((.+)\)", eval_f)[0]
-                bad_functions = ["eval", "exec"]
-                is_in = False
-                for function in bad_functions:
-                    if function in eval_body:
-                        is_in = True
-                if is_in:
-                    exceptions += 1
-                    continue
-            except IndexError:
-                continue
-
-            try:
+            exceptions = 0
+            for eval_f in all_eval_functions:
                 try:
-                    eval_data = eval(f"b{eval_body}").decode(ENCODEING)
+                    eval_body = re.findall(r"\((.+)\)", eval_f)[0]
+                    bad_functions = ["eval", "exec"]
+                    is_in = False
+                    for function in bad_functions:
+                        if function in eval_body:
+                            is_in = True
+                    if is_in:
+                        root_search(list(set(list(CodeSearchAlgorithms.function(eval_body, "eval")))))
+                        exceptions += 1
+                        continue
+                except IndexError:
+                    continue
+
+                try:
+                    try:
+                        eval_data = eval(f"b{eval_body}").decode(ENCODEING)
+                    except Exception:
+                        eval_data = eval(eval_body)
+                    self.file_data = self.file_data.replace(eval_f, eval_data)
                 except Exception:
-                    eval_data = eval(eval_body)
-                self.file_data = self.file_data.replace(eval_f, eval_data)
-            except Exception:
-                exceptions += 1
-        if exceptions == len(all_eval_functions):
-            raise Exception()
+                    exceptions += 1
+            if exceptions == len(all_eval_functions):
+                raise Exception(
+                    f"Exception: exceptions:{exceptions} == len(all_eval_functions):{len(all_eval_functions)}")
+
+        root_search(list(set(list(CodeSearchAlgorithms.function(self.file_data, "eval")))))
         return self.file_data
 
     def string_filter(self) -> str:
@@ -195,16 +285,67 @@ class DecodingAlgorithms:
         return self.file_data
 
 
-if __name__ == '__main__':
-    if len(sys.argv) > 2:
-        if not os.path.isfile(sys.argv[1]):
-            exit(f"# file not found!: {sys.argv[1]}")
+def data(filename):
+    if not os.path.isfile(filename):
+        exit(f"# file not found!: {filename}")
+
+    with open(filename, "rb") as bfile:
+        magic_number = bfile.read()[:4]
+
+    if MAGIC_NUMBER == magic_number:
+        with io.open_code(filename) as f:
+            return read_code(f)
+    else:
         try:
-            with open(sys.argv[1], "r") as file:
-                data = file.read()
+            with open(filename, "r") as file:
+                return file.read()
         except UnicodeDecodeError:
-            with io.open_code(sys.argv[1]) as f:
-                data = read_code(f)
-        DecodingAlgorithms(data, sys.argv[2])
+            return None
+
+
+def show_code():
+    print('')
+    syntax = Syntax(decoding_algorithms.file_data, "python")
+    console.print(syntax)
+
+
+def show_file_size(file):
+    print(f"# \033[1;32msize: {SIZE(file).size}\033[0m")
+
+
+if __name__ == '__main__':
+    if len(sys.argv) == 4 and sys.argv[3].lower() == "@psh_team":
+        os.system("clear")
+        total_layers = 0
+        copy = False
+        while True:
+            print(f"@psh_team <developer mode> total layers: {total_layers}")
+            if not copy:
+                content = data(sys.argv[1])
+                copy = True
+            else:
+                content = data(sys.argv[2])
+
+            decoding_algorithms = DecodingAlgorithms(content, sys.argv[2])
+            total_layers += 1
+            show_file_size(sys.argv[2])
+            console = Console()
+            p = multiprocessing.Process(target=show_code)
+            p.start()
+            p.join(2)
+            if p.is_alive():
+                p.kill()
+                print("# \033[1;33mcan't show the code because the file is to big!\033[0m")
+            print("")
+            if decoding_algorithms.file_data == content:
+                print("# \033[1;31mFailed to decode the file!\033[0m")
+                break
+            if input("Press [enter] to continue\nor [n] to stop\n: ").lower() == "n":
+                break
+            os.system("clear")
+
+    elif len(sys.argv) == 3:
+        DecodingAlgorithms(data(sys.argv[1]), sys.argv[2])
+
     else:
         print("USAGE:\n decode file.py output.py")
